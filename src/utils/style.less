@@ -1,0 +1,323 @@
+// 一杠标题 样式
+.weui-loadmore_line {
+  border-top:0.01rem solid #333;
+  margin-top:2.4em;
+}
+.weui-loadmore {
+  width:26%;
+  margin:0rem auto;
+  line-height:1.6em;
+  font-size:28rpx;
+  text-align:center;
+}
+.weui-loadmore__tips_in-line {
+  position:relative;
+  top:-0.9em;
+  padding:0 .55em;
+  color:#333333;
+  background: #F6F6F6;
+}
+.weui-loadmore__tips {
+  display:inline-block;
+  vertical-align:middle;
+}
+
+/*遮罩层*/
+.goods-buy-panel-cover{
+  width: 100%;
+  height: 100%;
+  position: fixed;
+  top: 0;
+  background-color: black;
+  -webkit-filter:opacity(.5);
+  z-index: 100;
+}
+.goods-buy-panel-container.goods-buy-panel-show{
+  transform: translateY(0);
+}
+/*购买面板*/
+.goods-buy-panel-container{
+  position: fixed;
+  bottom: 0px;
+  width: 100%;
+  z-index: 9999;
+  transform: translateY(150%);
+  transition: all 0.4s ease;
+  .tanchaung{
+    height:680rpx;
+    background: #FFF;
+    padding:30rpx 30rpx 100rpx 30rpx;
+    border-top-left-radius: 32rpx;
+    border-top-right-radius: 32rpx;
+    .cont{
+      display: flex;
+      position: relative;
+      .delete_img{
+        width: 48rpx;
+        height: 48rpx;
+        position: absolute;
+        top: -4rpx;
+        right: 0;
+      }
+      .min_img{
+        width: 200rpx;
+        height: 200rpx;
+        border: 1rpx solid #f6f6f6;
+        font-size: 0;
+        image{
+          width: 100%;
+          height: 100%;
+        }
+      }
+      .right_proInfo{
+        padding-left: 20rpx;
+        .title{
+          font-size: 34rpx;
+          font-weight: 600;
+        }
+        .fuhao_box{
+          color: #FF6356;
+          margin-top: 64rpx;
+          .fuhao{ font-size: 20rpx;}
+          .money{ font-size: 40rpx;}
+          label{ font-size: 28rpx;text-decoration:line-through;margin-left: 12rpx;color: #999;}
+        }
+        .choosed{
+          font-size: 24rpx;
+          color: #666;
+          margin-top: 10rpx;
+          overflow:hidden;
+          text-align:left;
+          word-break:break-all;
+          display:-webkit-box;
+          -webkit-line-clamp:2;
+          -webkit-box-orient:vertical;
+        }
+      }
+    }
+    .color_class{
+      padding: 28rpx 0rpx;
+      border-bottom: 1rpx solid #F0F0F0;
+      .title{
+        padding: 6rpx 0;
+      }
+    }
+    .color_class:last-child{
+      border-bottom:0;
+    }
+    .jiaAndJian{
+      padding: 48rpx 0;
+      position: relative;
+      .txt{ font-size: 30rpx; color: #444;}
+      .buy-num{
+        bottom: 46rpx;
+      }
+    }
+    .textrue{
+      padding: 0 24rpx;
+      padding-top: 40rpx;
+      .title{
+        font-size: 28rpx;
+        color: #333;
+        padding:6rpx 0;
+      }
+    }
+    .color_list_box{
+      display: flex;
+      flex-wrap:wrap;
+      .color_list.addclass{
+          /* border: 2rpx solid #ff3939;
+          color: #ff3939; */
+      }
+      .color_list{
+          height: 66rpx;
+          line-height: 66rpx;
+          border-radius: 10rpx;
+          display: inline-block;
+          padding: 0 20rpx;
+          margin-top: 14rpx;
+          margin-right: 36rpx;
+          color: #444;
+          max-width: 100%;
+          box-sizing:border-box;
+          overflow:hidden;
+          text-overflow:ellipsis;
+          white-space:nowrap;
+          background: #f5f5f5;
+      }
+      .color_list.default{
+        color: #c7c7c7;
+        background: #eee;
+        border: 0;
+      }
+    }
+    
+    .add_cart_btn,.bug_now_btn{
+      width: 100%;
+      height: 98rpx;
+      padding: 0 30rpx 20rpx 30rpx;
+      box-sizing: border-box;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      background: #fff;
+      color: #fff;
+      text-align: center;
+      font-size: 32rpx;
+      font-weight: 600;
+      .colorBtn{
+        height: 100%;
+        line-height: 78rpx;
+        background-color: #FF6356;
+        border-radius: 40rpx;
+      }
+    }
+  }
+}
+// 提取加减组件样式
+.buy-num {
+  width: 164rpx;
+  height: 48rpx;
+  line-height: 48rpx;
+  position: absolute;
+  right: 30rpx;
+  bottom: 0;
+  display: flex;
+  /*justify-content: space-between;*/
+  font-size: 24rpx;
+  text-align: center
+}
+.buy-num .jian-btn {
+  width: 48rpx;
+  height: 100%;
+  border-left: 1rpx solid #ccc;
+  border-bottom: 1rpx solid #ccc;
+  border-top: 1rpx solid #ccc;
+  border-bottom-left-radius: 6rpx;
+  border-top-left-radius: 6rpx;
+}
+.buy-num .jian-btn.disabled {
+  background-color: #f5f5f9;
+  border-left: 1rpx solid #eee;
+  border-bottom: 1rpx solid #eee;
+  border-top: 1rpx solid #eee;
+  color: #ccc;
+}
+.buy-num .jia-btn {
+  width: 48rpx;
+  height: 100%;
+  border-right: 1rpx solid #ccc;
+  border-bottom: 1rpx solid #ccc;
+  border-top: 1rpx solid #ccc;
+  border-bottom-right-radius: 6rpx;
+  border-top-right-radius: 6rpx;
+}
+.buy-num .jia-btn.disabled {
+  background-color: #f5f5f9;
+  border-right: 1rpx solid #eee;
+  border-bottom: 1rpx solid #eee;
+  border-top: 1rpx solid #eee;
+  color: #ccc;
+}
+.buy-num input {
+  width: 68rpx;
+  height: 48rpx;
+  min-height: 48rpx;
+  text-align: center;
+  font-size: 24rpx;
+  border: 1rpx solid #ccc;
+}
+// 订单、优惠券
+.search_no{
+  text-align: center;
+  padding-top:48px;
+  .font_14{
+    padding-bottom: 30rpx;
+  }
+  text{
+    font-size: 28rpx;
+    color: #999;
+  }
+}
+// 优惠券 公共
+.couponContent{
+  padding: 30rpx 28rpx 0 28rpx;
+  .couponListBox{
+    padding: 0 28rpx;
+    border: 1rpx solid #eee;
+    background: #fff;
+    border-radius: 12rpx;
+    margin-bottom: 28rpx;
+    .top{
+      display: flex;
+      padding-bottom: 20rpx;
+      .couponLeft{
+        font-size: 28rpx;
+        color: red;
+        padding-top: 24rpx;
+        .miaosu{
+          font-size: 24rpx;
+          color: #999;
+          margin-top: 18rpx;
+        }
+      }
+      .couponCenter{
+        flex:1;
+        padding-left: 40rpx;
+        .title{
+          color: #333;
+          margin-top: 28rpx;
+          margin-bottom: 28rpx;
+        }
+        .time{
+          display: flex;
+          align-items: center;
+          font-size: 24rpx;
+          color: #999;
+          span{
+            display: inline-block;
+            // width:168rpx;
+            overflow:hidden;
+            text-overflow:ellipsis;
+            white-space:nowrap;
+          }
+        }
+      }
+      .couponImg{
+        width: 80rpx;
+        height: 68rpx;
+        margin-top: 28rpx;
+      }
+    }
+    .cut_off_line{
+      width: 100%;
+      height: 2rpx;
+      position: relative;
+      background: #eee;
+      .radiusL{
+        width: 30rpx;
+        height: 30rpx;
+        border-radius: 50%;
+        background: #f7f7f7;
+        position: absolute;
+        top: -14rpx;
+        left: -40rpx;
+      }
+      .radiusR{
+        width: 30rpx;
+        height: 30rpx;
+        border-radius: 50%;
+        background: #f7f7f7;
+        position: absolute;
+        top: -14rpx;
+        right: -40rpx;
+      }
+    }
+    .bottom{
+      padding: 12rpx 0;
+      // border-top: 1rpx solid #eee;
+      font-size: 24rpx;
+      color: #999;
+    }
+  }
+}

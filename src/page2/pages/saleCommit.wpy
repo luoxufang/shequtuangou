@@ -1,0 +1,380 @@
+<template>
+  <view class="myContainer">
+    <form bindsubmit="formSubmit" bindreset="formReset">
+
+      <view class="commonMadule">
+
+        <view class="tuanzhangQuanyi">
+          <view class="inputBox">
+            <view class="inputname">售后类型</view>
+            <picker bindchange="bindPickerChange" value="" range="{{array}}">
+              <input disabled='true' name="type" style="height:88rpx" value="{{pickerValue}}" placeholder="选择类型" placeholder-style="{{commonStyle}}"/>
+            </picker>
+            <image style="width:14rpx;height:24rpx;margin-right:30rpx;" src="../../assets/right.png" alt=""/>
+          </view>
+
+          <view class="inputBox" wx:if="{{!pickerValue||pickerValue=='退货退款'}}">
+            <view class="inputname">退货理由</view>
+            <picker bindchange="bindPickerChange2" value="" range="{{array2}}">
+              <input disabled='true' name="reason" style="height:88rpx" value="{{pickerValue2}}" placeholder="选择理由" placeholder-style="{{commonStyle}}"/>
+            </picker>
+            <image style="width:14rpx;height:24rpx;margin-right:30rpx;" src="../../assets/right.png" alt=""/>
+          </view>
+          
+          <view class="inputBox" wx:if="{{!pickerValue||pickerValue=='退货退款'}}">
+            <view class="inputname">退款说明</view>
+            <input name="explain" class="input" placeholder="退款说明..." placeholder-style="{{commonStyle}}"/>
+          </view>
+          <view class="inputBox" wx:else>
+            <view class="inputname">换货说明</view>
+            <input name="explain" class="input" placeholder="换货说明..." placeholder-style="{{commonStyle}}"/>
+          </view>
+          <!-- <view class="inputBox">
+            <view class="inputname">联系人</view>
+            <input name="homeName" class="input" placeholder="联系人..." placeholder-style="{{commonStyle}}"/>
+          </view>
+          
+          <view class="inputBox">
+            <view class="inputname">联系方式</view>
+            <input name="phone" bindinput="phoneChange" class="input" placeholder="请输入手机号" placeholder-style="{{commonStyle}}"/>
+          </view> -->
+
+          <!-- <view class="inputBox">
+            <view class="inputname">验证码</view>
+            <input name="codeIs" class="input" placeholder="验证码" placeholder-style="{{commonStyle}}"/>
+            <view class="codeBox {{changeColor ? 'changeColor': ''}}" @tap="getValidCode">
+              <view class="childBox">{{count!=60? '重新获取('+count+'s)':'获取验证码'}}</view>
+            </view>
+          </view> -->
+
+          <view class="inputBox" wx:if="{{!pickerValue||pickerValue=='退货退款'}}">
+            <view class="inputname">退款金额</view>
+            <input name="tuiMoney" class="input" placeholder="金额" placeholder-style="{{commonStyle}}"/>
+            <view style="color:red;">最多退{{moneyNumber}}元</view>
+          </view>
+
+          <view class="inputBox" wx:if="{{!pickerValue||pickerValue=='退货退款'}}">
+            <view class="inputname">退款方式</view>
+            <picker bindchange="bindPickerChange3" value="" range="{{array3}}">
+              <input disabled='true' name="tuiMode" style="height:88rpx" value="{{pickerValue3}}" placeholder="选择方式" placeholder-style="{{commonStyle}}"/>
+            </picker>
+            <image style="width:14rpx;height:24rpx;margin-right:30rpx;" src="../../assets/right.png" alt=""/>
+          </view>
+        </view>
+
+      </view>
+
+      <view class="uploadImageBox">
+        <view class="txtt">上传凭证(一次只能上传一张，最多三张)</view>
+        <view class="ddd">
+
+          <view class="imgBox" wx:for="{{imgList}}" wx:key="{{index}}" @tap="upload_image1({{item}})">
+            <image src="https://api.118zc.com{{item}}" alt=""/>
+          </view>
+
+          <view wx:if="{{imgList.length<3}}" class="imgBox" @tap="upload_image1()">
+            <image src="../../assets/no_image.png" alt=""/>
+          </view>
+
+        </view>
+      </view>
+
+      <button formType="submit">提交申请</button>
+    </form>
+  </view>
+</template>
+<script>
+import wepy from 'wepy'
+import tip from '@/utils/tip'
+import api from '@/api/api';
+export default class saleCommit extends wepy.page {
+  config = {
+    navigationBarTitleText: '申请售后'
+  }
+  data = {
+    phoneNumber:'',
+    count: 60,
+    changeColor: false,
+    hello: 'hello world',
+    showAddress:'',
+    commonStyle:'font-size:28rpx;color:#666;opacity: 0.6;',
+    keys:'',
+    regions:[],
+    pickerValue:'',
+    pickerValue2:'',
+    pickerValue3:'',
+    array: ['退货退款','换货'],
+    array2: ['不想要了','品质与描述不符','少件、漏发  ','包装/商品破损、变形','7天无理由退货','不喜欢'],
+    array3: ['退到预存款','退到微信'],
+    option:'',
+    moneyNumber:'',
+    imgList:[],
+    img:'',
+    pics:[]
+  }
+  async onLoad(option){
+    this.option = option.id
+    //拿到该商品最多可退金额数
+    let rlt = await api.orderAfterEdit({
+      query:{
+        token: wx.getStorageSync('openid'),
+        id: option.id
+      },
+      method:"POST"
+    });
+    if (rlt.data.code==0) {
+      this.moneyNumber = rlt.data.data.fee
+    }
+    this.$apply();
+    
+  }
+  methods = {
+    phoneChange(event){
+      this.phoneNumber = event.detail.value
+    },
+    bindPickerChange(e) {
+      this.pickerValue = this.array[e.detail.value]
+      console.log(this.pickerValue)
+    },
+    bindPickerChange2(e) {
+      this.pickerValue2 = this.array2[e.detail.value]
+    },
+    bindPickerChange3(e) {
+      this.pickerValue3 = this.array3[e.detail.value]
+    },
+    async formSubmit(e){
+      if(!this.pickerValue||this.pickerValue=='退货退款'){
+        if(!e.detail.value.type){
+          tip.toast('请选择售后类型')
+          return
+        }else if(!e.detail.value.reason){
+          tip.toast('请选择理由')
+          return
+        }else if (!e.detail.value.explain){
+          tip.toast('请输入说明')
+          return
+        }else if(!e.detail.value.tuiMoney){
+          tip.toast('请输入金额')
+          return
+        }else if(!e.detail.value.tuiMode){
+          tip.toast('请输入方式')
+          return
+        }
+      }else{
+        if(!e.detail.value.type){
+          tip.toast('请选择售后类型')
+          return
+        }else if(!e.detail.value.explain){
+          tip.toast('请输入说明')
+          return
+        }
+      }
+      const data = await api.orderAfter({
+        query:{
+          token: wx.getStorageSync('openid'),
+          order_id: this.option,
+          after_type: this.pickerValue=='退货退款'?'refunds':'exchange',
+          after_reason: e.detail.value.reason,
+          desc: e.detail.value.explain,
+          fee: e.detail.value.tuiMoney,
+          fee_type: e.detail.value.tuiMode=='退到微信'?'wechat':'deposit',
+          img_urls: this.imgList
+        },
+        method:'post'
+      });
+      if(data.data.code==0){
+        tip.toast('申请提交成功')
+        setTimeout(()=>{
+          wx.navigateBack({
+            delta: 1
+          },1000)
+        })
+      }else{
+        tip.toast(data.msg)
+      }
+    },
+    getValidCode: function() {
+      var RegExp = /^((0\d{2,3}-\d{7,8})|(1[3584]\d{9}))$/;
+      if (!this.phoneNumber || !RegExp.test(this.phoneNumber)) {
+        tip.toast('请正确填写号码')
+      } else {
+        if (this.count == 60) {
+          this.tick();
+          this.send_message();
+          this.changeColor = true;
+        }
+      }
+    },
+    upload_image1 (type) {
+      var that = this,
+　　　　　　pics = this.pics;
+      wx.chooseImage({//选取图片
+        count: 1,
+        sizeType: ["compressed"],
+        success: function (res) {
+          var tempFilePaths = res.tempFilePaths
+          console.log(tempFilePaths[0])
+          // that.imgList = tempFilePaths
+          that.upload_file(tempFilePaths[0],type)
+        }
+      })
+
+    }
+
+  }
+  uploadimg(){//这里触发图片上传的方法
+    var pics = this.pics;
+    tip.uploadimg({
+        url: 'https://api.118zc.com/common/uploadFile',//这里是你图片上传的接口
+        path: pics//这里是选取的图片的地址数组
+    });
+  }
+
+  sleep (data) {
+    return new Promise((resolve, reject) => {
+      resolve('promise resolved98859')
+      let aaaa = data.map(item => {
+        // console.log(item)
+        return this.goodsList.push(item)
+      })
+    })
+    this.$apply();
+  }
+
+  async upload_file( filePath , type){
+    let that = this
+    wx.uploadFile({
+      url: 'https://api.118zc.com/common/uploadFile', //仅为示例，非真实的接口地址
+      filePath: filePath,
+      name: 'file',
+      formData: {},
+      header: {
+        'content-type': 'application/json'
+      },
+      success: function (res) {
+        res.data = JSON.parse(res.data)
+        //对循环数组 imgList 进行操作
+        if(type){
+          for(let i in that.imgList){
+            if(that.imgList[i] == type){
+              that.imgList[i]=res.data.data.info
+            }
+          }
+        }else{
+          that.imgList.push(res.data.data.info)
+        }
+        console.log(that.imgList)
+        // console.log(res.data.data)
+        // console.log(typeof res.data.data)
+        that.$apply();
+      },
+      fail: function (res) {
+        console.log(res);
+      },
+      complete: function (res) {
+        // console.log(res);
+      }
+    })
+  }
+  //发送验证码
+  async send_message() {
+    const data = await api.sendMobileCode({
+      query:{ mobile:this.phoneNumber },
+      method:'post'
+    });
+    if(data.data.code==0){
+      tip.toast('发送成功，请注意查收')
+      this.keys = data.data.keys
+    }
+  }
+  tick() {
+    var vm = this;
+    if (vm.count > 0) {
+      var count = vm.count - 1;
+      vm.count = count;
+      setTimeout(function() {
+        return vm.tick();
+      }, 1000);
+    } else {
+      (vm.count = 60), (vm.changeColor = false);
+    }
+    vm.$apply();
+  }
+}
+</script>
+<style lang="less">
+.myContainer{
+  padding-top: 24rpx;
+  .uploadImageBox{
+    padding-left: 34rpx;
+    padding-top: 24rpx;
+    .ddd{
+      display: flex;
+      padding-top: 24rpx;
+    }
+    .txtt{
+      font-size: 26rpx;
+      color: #666;
+    }
+    .imgBox{
+      width: 200rpx;
+      height: 200rpx;
+      margin-right: 12rpx;
+      image{
+        width: 100%;
+        height: 100%;
+      }
+    }
+  }
+  .commonMadule{
+    position: relative;
+  }
+  .tuanzhangQuanyi{
+    background-color: #fff;
+    padding-left: 34rpx;
+    line-height: 100rpx;
+    .inputBox{
+      display: flex;
+      align-items: center;
+      border-bottom: 1rpx solid #eee;
+      .inputname{ width: 130rpx; }
+      input{ color:#666; }
+      .input{ height: 100rpx; }
+      .codeBox{
+        display: flex;
+        align-items:center;
+        height: 100rpx;
+        color: #666;
+        .childBox{
+          width: 210rpx;
+          height: 40rpx;
+          display: flex;
+          align-items:center;
+          justify-content:center;
+          border-left: 1rpx solid #eee;
+        }
+      }
+      .codeBox.changeColor{ color: #999;}
+      picker{
+        flex: 1;
+      }
+    }
+    .inputBox:last-child{
+      border: 0;
+    }
+  }
+}
+button{
+  margin: 48rpx;
+  height:88rpx;
+  text-align: center;
+  border-radius: 14rpx;
+  color: #fff;
+  line-height: 88rpx;
+  font-size:28rpx;
+  background: #FE5343 !important;
+}
+button::after{
+  border: 0;
+}
+</style>

@@ -1,0 +1,510 @@
+<template>
+  <view class="myContainer">
+    <view class="top_fixd">
+      <van-search
+        value="{{ value }}"
+        placeholder="订单号、收货人、手机查询"
+        use-action-slot
+        bind:search="onSearch"
+        bind:change="bindChange"
+      >
+        <view slot="action" @tap="onSearchFn">搜索</view>
+      </van-search>
+
+      <van-tabs active="{{ active }}" bind:change="onChange" bind:scroll="{scrollTop:0, isFixed:true}" style="">
+        <van-tab title="全部"></van-tab>
+        <van-tab title="待配送"></van-tab>
+        <van-tab title="配送中"></van-tab>
+        <van-tab title="已完成"></van-tab>
+      </van-tabs>
+    </view>
+
+    <swiper current="{{currentTab}}" class="swiper-box" duration="200" style="height:100%" bindchange="swiperChange">
+      <!-- 全部 -->
+      <swiper-item>
+        <scroll-view style="height:100%;" bindscrolltolower="scrollBottomFn" scroll-into-view="{{toView}}" scroll-top="{{scrollTop}}" scroll-with-animation="" scroll-y="true" class="my_table_list scroll-view_H">
+          
+          <view class="order_box" wx:for="{{orderList}}" wx:key="{{index}}">
+            <view class="down_time"><text>下单时间：{{item.create_time}}</text>
+              <text wx:if="{{item.trade_status==0}}" style="color:red;">待付款</text>
+              <text wx:elif="{{item.trade_status==1}}" style="color:red;">待配送</text>
+              <text wx:elif="{{item.trade_status==2}}" style="color:red;">配送中</text>
+              <text wx:elif="{{item.trade_status==3}}" style="color:red;">待提货</text>
+              <text wx:elif="{{item.trade_status==4}}" style="color:red;">已完成</text>
+              <text wx:else="{{item.trade_status==5}}" style="color:red;">已关闭</text>
+            </view>
+            <view class="scroll_box">
+              <scroll-view class="img_view" scroll-x style="width: 100%">
+                <image wx:for="{{item.list}}" wx:key="{{idx}}" mode="aspectFill" src="https://api.118zc.com{{item.default_image}}"/>
+              </scroll-view>
+            </view>
+            <view class="action_info">
+              <view style="flex:1;"><text>共{{item.total_num}}件商品：</text><text>￥{{item.payment}}</text></view>
+              <view class="common_btn" @tap="go_to_order_detail({{item.id}})">查看详情</view>
+            </view>
+          </view>
+
+          <view class="content">
+            <view class="search_no" wx:if="{{orderList.length == 0}}">
+              <view class="font_14"><image class="scimg" src="../../assets/search_no.png" style="width:189rpx;height:189rpx;"></image></view>
+              <text>暂无任何订单记录</text>
+            </view>
+          </view>
+
+          <!-- <i-load-more wx:if="{{isLoading}}" i-class="loadingClassYes" loading="{{true}}" /> -->
+          <i-load-more wx:if="{{loadOnNoData&&orderList.length>0}}" i-class="loadingClassNo" tip="没有更多了" loading="{{false}}" />
+        
+        </scroll-view>
+
+      </swiper-item>
+      <!-- 待提货 -->
+      <swiper-item>
+        <scroll-view style="height:100%;" bindscrolltolower="scrollBottomFn1" scroll-into-view="{{toView}}" scroll-top="{{scrollTop}}" scroll-with-animation="" scroll-y="true" class="my_table_list scroll-view_H">
+          <view class="order_box" wx:for="{{orderList1}}" wx:key="{{index}}">
+            <view class="down_time"><text>下单时间：{{item.create_time}}</text>
+              <text wx:if="{{item.trade_status==0}}" style="color:red;">待付款</text>
+              <text wx:elif="{{item.trade_status==1}}" style="color:red;">待配送</text>
+              <text wx:elif="{{item.trade_status==2}}" style="color:red;">配送中</text>
+              <text wx:elif="{{item.trade_status==3}}" style="color:red;">待提货</text>
+              <text wx:elif="{{item.trade_status==4}}" style="color:red;">已完成</text>
+              <text wx:else="{{item.trade_status==5}}" style="color:red;">已关闭</text>
+            </view>
+            <view class="scroll_box">
+              <scroll-view class="img_view" scroll-x style="width: 100%">
+                <image wx:for="{{item.list}}" wx:key="{{idx}}" mode="aspectFill" src="https://api.118zc.com{{item.default_image}}"/>
+              </scroll-view>
+            </view>
+            <view class="action_info">
+              <view style="flex:1;"><text>共{{item.total_num}}件商品：</text><text>￥{{item.payment}}</text></view>
+              <view class="common_btn" @tap="go_to_order_detail({{item.id}})">查看详情</view>
+            </view>
+          </view>
+          <view class="content">
+            <view class="search_no" wx:if="{{orderList1.length == 0}}">
+              <view class="font_14"><image class="scimg" src="../../assets/search_no.png" style="width:189rpx;height:189rpx;"></image></view>
+              <text>暂无任何订单记录</text>
+            </view>
+          </view>
+          
+          <i-load-more wx:if="{{isLoading1}}" i-class="loadingClassYes" loading="{{true}}" />
+          <i-load-more wx:if="{{loadOnNoData1&&orderList1.length>0}}" i-class="loadingClassNo" tip="没有更多了" loading="{{false}}" />
+        </scroll-view>
+
+      </swiper-item>
+      <!-- 已完成 -->
+      <swiper-item>
+        <scroll-view style="height:100%;" bindscrolltolower="scrollBottomFn2" scroll-into-view="{{toView}}" scroll-top="{{scrollTop}}" scroll-with-animation="" scroll-y="true" class="my_table_list scroll-view_H">
+          <view class="order_box" wx:for="{{orderList2}}" wx:key="{{index}}">
+            <view class="down_time"><text>下单时间：{{item.create_time}}</text>
+              <text wx:if="{{item.trade_status==0}}" style="color:red;">待付款</text>
+              <text wx:elif="{{item.trade_status==1}}" style="color:red;">待配送</text>
+              <text wx:elif="{{item.trade_status==2}}" style="color:red;">配送中</text>
+              <text wx:elif="{{item.trade_status==3}}" style="color:red;">待提货</text>
+              <text wx:elif="{{item.trade_status==4}}" style="color:red;">已完成</text>
+              <text wx:else="{{item.trade_status==5}}" style="color:red;">已关闭</text>
+            </view>
+            <view class="scroll_box">
+              <scroll-view class="img_view" scroll-x style="width: 100%">
+                <image wx:for="{{item.list}}" wx:key="{{idx}}" mode="aspectFill" src="https://api.118zc.com{{item.default_image}}"/>
+              </scroll-view>
+            </view>
+            <view class="action_info">
+              <view style="flex:1;"><text>共{{item.total_num}}件商品：</text><text>￥{{item.payment}}</text></view>
+              <view class="common_btn" @tap="go_to_order_detail({{item.id}})">查看详情</view>
+            </view>
+          </view>
+          <view class="content">
+            <view class="search_no" wx:if="{{orderList2.length == 0}}">
+              <view class="font_14"><image class="scimg" src="../../assets/search_no.png" style="width:189rpx;height:189rpx;"></image></view>
+              <text>暂无任何订单记录</text>
+            </view>
+          </view>
+          
+          <i-load-more wx:if="{{isLoading2}}" i-class="loadingClassYes" loading="{{true}}" />
+          <i-load-more wx:if="{{loadOnNoData2&&orderList2.length>0}}" i-class="loadingClassNo" tip="没有更多了" loading="{{false}}" />
+        </scroll-view>
+
+      </swiper-item>
+      <!-- 已关闭 -->
+      <swiper-item>
+        <scroll-view style="height:100%;" bindscrolltolower="scrollBottomFn3" scroll-into-view="{{toView}}" scroll-top="{{scrollTop}}" scroll-with-animation="" scroll-y="true" class="my_table_list scroll-view_H">
+          <view class="order_box" wx:for="{{orderList3}}" wx:key="{{index}}">
+            <view class="down_time"><text>下单时间：{{item.create_time}}</text>
+              <text wx:if="{{item.trade_status==0}}" style="color:red;">待付款</text>
+              <text wx:elif="{{item.trade_status==1}}" style="color:red;">待配送</text>
+              <text wx:elif="{{item.trade_status==2}}" style="color:red;">配送中</text>
+              <text wx:elif="{{item.trade_status==3}}" style="color:red;">待提货</text>
+              <text wx:elif="{{item.trade_status==4}}" style="color:red;">已完成</text>
+              <text wx:else="{{item.trade_status==5}}" style="color:red;">已关闭</text>
+            </view>
+            <view class="scroll_box">
+              <scroll-view class="img_view" scroll-x style="width: 100%">
+                <image wx:for="{{item.list}}" wx:key="{{idx}}" mode="aspectFill" src="https://api.118zc.com{{item.default_image}}"/>
+              </scroll-view>
+            </view>
+            <view class="action_info">
+              <view style="flex:1;"><text>共{{item.total_num}}件商品：</text><text>￥{{item.payment}}</text></view>
+              <view class="common_btn" @tap="go_to_order_detail({{item.id}})">查看详情</view>
+            </view>
+          </view>
+          <view class="content">
+            <view class="search_no" wx:if="{{orderList3.length == 0}}">
+              <view class="font_14"><image class="scimg" src="../../assets/search_no.png" style="width:189rpx;height:189rpx;"></image></view>
+              <text>暂无任何订单记录</text>
+            </view>
+          </view>
+          
+          <i-load-more wx:if="{{isLoading3}}" i-class="loadingClassYes" loading="{{true}}" />
+          <i-load-more wx:if="{{loadOnNoData3&&orderList3.length>0}}" i-class="loadingClassNo" tip="没有更多了" loading="{{false}}" />
+        </scroll-view>
+
+      </swiper-item>
+
+    </swiper>
+    
+  </view>
+</template>
+<script>
+import wepy from 'wepy'
+import api from '@/api/api'
+export default class memberList extends wepy.page {
+  config = {
+    navigationBarTitleText: '团队订单',
+    usingComponents: {
+      "van-search": "/components/vant/search/index",
+      "van-tab": "/components/vant/tab/index",
+      "van-tabs": "/components/vant/tabs/index",
+      "i-load-more": "../../resources/ui/load-more/index"
+    }
+  }
+  data = {
+    inputValue: '',
+    value: '',
+    active: 0,
+    listData:[],
+    isLoading:false,
+    loadOnNoData:false,
+    winHeight: 0,
+    currentTab: 0,
+    orderList:[],
+    orderList1:[],
+    orderList2:[],
+    orderList3:[],
+    options: 0,
+    isLoading:false,
+    isLoading1:false,
+    isLoading2:false,
+    isLoading3:false,
+    loadOnNoData:false,
+    loadOnNoData1:false,
+    loadOnNoData2:false,
+    loadOnNoData3:false,
+    options: 0,
+    currentPage: 1,
+    currentPage1: 1,
+    currentPage2: 1,
+    currentPage3: 1,
+    sign: 0,
+    sign1: 0,
+    sign2: 0,
+    sign3: 0,
+  }
+  onLoad(){
+    this.commonGetList()
+  }
+  methods = {
+    go_to_order_detail(id){
+      this.$navigate(`./orderManageDetail?id=${id}`);
+    },
+    bindChange(event){
+      this.inputValue = event.detail
+      if(!this.inputValue){
+        this.abcd()
+      }
+      this.$apply();
+    },
+    onSearch(event){
+      if(this.inputValue){
+        console.log(event.detail)
+        this.abcd()
+      }
+    },
+    onSearchFn(){
+      if(this.inputValue){
+        console.log(this.inputValue)
+        this.abcd()
+      }
+    },
+    //点击顶部tab 改变 currentTab
+    onChange(event) {
+      console.log(this.currentPage,this.currentPage1,this.currentPage2,this.currentPage3)
+      this.currentTab = event.detail.index
+      this.active = event.detail.index.toString()
+      this.$apply()
+    },
+    //滑动swiper改变相应的currentTab
+    swiperChange (e) {
+      this.currentTab = e.detail.current
+      this.active = e.detail.current
+      switch(e.detail.current){
+        case 0:
+          this.options = 0
+          this.currentPage = 1
+          this.orderList=[]
+          this.commonGetList()
+          break;
+        case 1:
+          this.options = 1
+          this.currentPage1 = 1
+          this.orderList1=[]
+          this.commonGetList()
+          break;
+        case 2:
+          this.options = 2
+          this.currentPage2 = 1
+          this.orderList2=[]
+          this.commonGetList()
+          break;
+        case 3:
+          this.options = 3
+          this.currentPage3 = 1
+          this.orderList3=[]
+          this.commonGetList()
+          break;
+        default:
+          break;
+      }
+      this.$apply()
+    }
+  }
+  abcd(){
+    switch(this.options){
+      case 0:
+        this.currentPage = 1
+        this.orderList=[]
+        this.commonGetList()
+        break;
+      case 1:
+        this.currentPage1 = 1
+        this.orderList1=[]
+        this.commonGetList()
+        break;
+      case 2:
+        this.currentPage2 = 1
+        this.orderList2=[]
+        this.commonGetList()
+        break;
+      case 3:
+        this.currentPage3 = 1
+        this.orderList3=[]
+        this.commonGetList()
+        break;
+      default:
+        break;
+    }
+  }
+  sleep (data) {
+    return new Promise((resolve, reject) => {
+      let aaaa = data.map(item => {
+        resolve('promise resolved2')
+        switch(this.active.toString()){//标志位
+          case '0':
+            return this.orderList.push(item)
+            break;
+          case '1':
+            return this.orderList1.push(item)
+            break;
+          case '2':
+            return this.orderList2.push(item)
+            break;
+          case '3':
+            return this.orderList3.push(item)
+            break;
+          default:
+            break;
+        }
+      })
+      this.$apply();
+    })
+  }
+  async commonGetList(){
+    let commomPage;
+    switch(this.active.toString()){
+      case '0':
+        commomPage = this.currentPage
+        break;
+      case '1':
+        commomPage = this.currentPage1
+        break;
+      case '2':
+        commomPage = this.currentPage2
+        break;
+      case '3':
+        commomPage = this.currentPage3
+        break;
+      default :
+          break;
+    }
+    let result = await api.getTeamTrade({
+      query:{
+        token: wx.getStorageSync('openid'),
+        type_id: this.options,
+        page: commomPage,
+        keyword: this.inputValue?this.inputValue:''
+      },
+      method:'POST'
+    });
+    if(!result.data.code){
+      this.isLoading = false
+      this.isLoading1 = false
+      this.isLoading2 = false
+      this.isLoading3 = false
+      let listData = result.data.data.list
+      // console.log(listData)
+      switch(this.active.toString()){
+        case '0':
+          let orderList = await this.sleep(listData)
+          if(listData.length>0){ this.currentPage++ }
+          if(listData.length<20){ this.loadOnNoData = true }
+          if(this.sign==0){ this.sign = 1 }
+          console.log('currentPage:'+this.currentPage)
+          break;
+        case '1':
+          let orderList1 = await this.sleep(listData)
+          if(listData.length>0){ this.currentPage1++ }
+          if(listData.length<20){ this.loadOnNoData1 = true }
+          break;
+        case '2':
+          let orderList2 = await this.sleep(listData)
+          if(listData.length>0){ this.currentPage2++ }
+          if(listData.length<20){ this.loadOnNoData2 = true }
+          break;
+        case '3':
+          let orderList3 = await this.sleep(listData)
+          if(listData.length>0){ this.currentPage3++ }
+          if(listData.length<20){ this.loadOnNoData3 = true }
+          break;
+        default :
+          break;
+      }
+      this.$apply()
+    }
+  }
+
+  scrollBottomFn(){
+    console.log('到达底部')
+    if(!this.loadOnNoData){//没到底
+      this.isLoading =true
+      this.commonGetList()
+    }
+  }
+  scrollBottomFn1(){
+    if(!this.loadOnNoData1){//没到底
+      this.isLoading1 =true
+      this.commonGetList()
+    }
+  }
+  scrollBottomFn2(){
+    if(!this.loadOnNoData2){//没到底
+      this.isLoading2 =true
+      this.commonGetList()
+    }
+  }
+  scrollBottomFn3(){
+    if(!this.loadOnNoData3){//没到底
+      this.isLoading3 =true
+      this.commonGetList()
+    }
+  }
+
+}
+</script>
+<style lang="less">
+@import '../../utils/style.less';
+.myContainer{
+  background-color: #f7f7f7;
+  height: 100%;
+  box-sizing: border-box;
+  padding-top: 196rpx;
+  .top_fixd{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    box-sizing: border-box;
+    z-index: 1000;
+  }
+  .swiper-box{
+    display: block; 
+    height: 100%; 
+    width: 100%; 
+    overflow: hidden; 
+  }
+  .orderBoxx{
+    margin-top: 24rpx;
+    height: 300rpx;
+    background: pink;
+  }
+  .order_box{
+    background: #fff;
+    border-radius: 18rpx;
+    margin: 0rpx 20rpx 20rpx 20rpx;
+    box-shadow: 0 2px 9px 0 rgba(0,0,0,.08);
+    .down_time{
+      padding: 0 30rpx;
+      border-bottom: 1rpx solid #eee;
+      display: flex;
+      align-items: center;
+      height: 88rpx;
+      text:first-child{
+        color: #666;
+        font-size: 26rpx;
+      }
+      text:last-child{
+        flex: 1;
+        justify-content: flex-end;
+        text-align: right;
+      }
+    }
+    .scroll_box{
+      padding: 20rpx 30rpx;
+      overflow: hidden;
+      .img_view{
+        font-size: 0;
+        white-space: nowrap;
+        image{
+          width: 160rpx;
+          height: 160rpx;
+          margin-right: 14rpx;
+        }
+      }
+    }
+    .action_info{
+      padding: 0 30rpx;
+      display: flex;
+      align-items: center;
+      justify-content: left;
+      height: 100rpx;
+      border-top: 2rpx solid #eee;
+      text:first-child{
+        font-size: 26rpx;
+        color: #666;
+      }
+      text:last-child{
+        font-size: 34rpx;
+        color: #333;
+      }
+      .common_btn{
+        width: 154rpx;
+        height: 58rpx;
+        border: 1rpx solid #F6F6F6;
+        color:#666;
+        border-radius: 32rpx;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
+  }
+}
+</style>

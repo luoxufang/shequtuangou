@@ -1,0 +1,189 @@
+<template>
+  <view class="myContainer">
+    <view class="bigBox">
+      <view class="walletBox">
+        <view class="money"><span style="font-size:28rpx;">￥</span>{{deposit}}</view>
+        <view class="text">当前可用</view>
+      </view>
+    </view>
+    <view class="common_box" style="padding:38rpx;">
+      <view class="moneyBox">
+        <view class="childDiv">
+          <view style="text-align:center;">
+            <view class="money"><span style="font-size:26rpx;">￥</span>{{use_deposit}}</view>
+            <view class="title">可用金额</view>
+          </view>
+        </view>
+        <view class="childDiv">
+          <view style="text-align:center;">
+            <view class="money"><span style="font-size:26rpx;">￥</span>{{freeze_deposit}}</view>
+            <view class="title">未到账金额</view>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view class="listBox">
+
+      <view class="list" wx:for="{{dataList}}" wx:key="{{index}}">
+        <view class="titleAndTile">
+          <view class="title">{{item.desc}}</view>
+          <view class="titme">{{item.create_time}}</view>
+        </view>
+        <view wx:if="{{item.inc_dec==1}}" class="moneyNumber">+{{item.fee}}</view>
+        <view wx:else class="moneyNumber active">-{{item.fee}}</view>
+      </view>
+
+    </view>
+    <view class="btn_boxx">
+      <button @tap="recharge">充值</button><button class="btn222" @tap="reflect">提现</button>
+    </view>
+    
+  </view>
+</template>
+<script>
+import wepy from 'wepy'
+import api from '@/api/api';
+export default class recruit extends wepy.page {
+  config = {
+    navigationBarTitleText: '我的余额'
+  }
+  data = {
+    hello: 'hello world',
+    dataList: [],
+    commomPage: 1,
+    deposit:'0.00',
+    use_deposit:'0.00',
+    freeze_deposit:'0.00',
+  }
+
+  async onLoad(options){
+    this.deposit = options.deposit
+    this.use_deposit = options.use_deposit
+    this.freeze_deposit = options.freeze_deposit
+
+    let Data = await api.getDepositList({
+      query:{
+        token: wx.getStorageSync('openid'),
+        pageSize: 20,
+        page: this.commomPage
+      },
+      method:'POST'
+    });
+    if(!Data.data.code){
+      this.dataList = Data.data.data.list
+    }
+    this.$apply()
+    
+  }
+
+  methods = {
+    applyTuan(){
+      this.$navigate(`./applyTuan`);
+    },
+    recharge(){
+      this.$navigate(`../page2/pages/recharge`);
+    },
+    reflect(){
+      this.$navigate(`../page2/pages/reflect`);
+    }
+  }
+}
+</script>
+<style lang="less">
+.myContainer{
+  .bigBox{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 180rpx;
+    background: pink;
+    background-color: #fe4f63;
+    background: -moz-linear-gradient(top, #d91f54 0%, #fe4f63 50%);
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#d91f54), color-stop(50%,#fe4f63));
+    background: -webkit-linear-gradient(top, #d91f54 0%,#fe4f63 50%);
+    background: -o-linear-gradient(top, #d91f54 0%,#fe4f63 50%);
+    background: -ms-linear-gradient(top, #d91f54 0%,#fe4f63 50%);
+    background: linear-gradient(to bottom, #d91f54 0%,#fe4f63 50%);
+    color: #fff;
+    .walletBox{
+      font-size: 40rpx;
+      color: #fff;
+      text-align: center;
+      .text{ margin-top:12rpx;font-size: 32rpx; }
+    }
+  }
+  .common_box{
+    position: relative;
+    background-color: #FFF;
+    box-shadow: 0 2px 4px 0 rgba(0,0,0,.04);
+    .moneyBox{
+      display: flex;
+      flex-wrap:wrap;
+      .childDiv{
+        width: 50%;
+        height: 46rpx;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-right: 1rpx solid #eee;
+        box-sizing: border-box;
+        .money{ font-size: 30rpx;font-weight: bold; color: #333; }
+        .title{ font-size: 24rpx;color: #666; }
+      }
+      .childDiv:last-child{
+        border-right:0;
+      }
+    }
+  }
+  .listBox{
+    padding-bottom: 100rpx;
+    .list{
+      display: flex;
+      align-items: center;
+      font-size: 32rpx;
+      color: #333;
+      padding: 28rpx;
+      border-bottom: 1rpx solid #eee;
+      background: #fff;
+      .moneyNumber.active{ color:#1AAD16; }
+      .titleAndTile{
+        font-size: 26rpx;
+        flex: 1;
+        .titme{
+          margin-top: 6rpx;
+          font-size: 24rpx;
+          color:#999;
+        }
+      }
+    }
+    .list:last-child{
+      border-bottom: 0;
+    }
+  }
+}
+.btn_boxx{
+  position: fixed;
+  bottom: 0;
+  display: flex;
+  width: 100%;
+  height: 100rpx;
+  // box-shadow:0 -2px 4px 0 rgba(0, 0, 0, 0.03);
+}
+button{
+  width: 50%;
+  height: 100%;
+  text-align: center;
+  color: #fff;
+  line-height: 100rpx;
+  font-size:32rpx;
+  background: #d91f54 !important;
+  border-radius: 0;
+}
+.btn222{
+  background: #fff !important;
+  color: #d91f54;
+}
+button::after{
+  border: 0;
+}
+</style>

@@ -1,0 +1,99 @@
+<template>
+  <view class="shopRecord">
+    <view class="shopList_box">
+      <block wx:for="{{dataInfo}}" wx:key="index">
+        <view class="shopList">
+          <image mode="aspectFill" src="{{item.avatar_logo}}" />
+          <view class="username">{{item.nickname}}</view>
+          <view class="shop_number">买了<text style="color:#FF4444;">{{item.num}}</text>份</view>
+          <view class="shop_time">{{item.create_time}}</view>
+        </view>
+      </block>
+    </view>
+  </view>
+</template>
+<script>
+import wepy from 'wepy';
+import api from '@/api/api';
+export default class shopRecord extends wepy.page {
+  config = {
+    navigationBarTitleText: '购买记录',
+  }
+  
+  data = {
+    dataInfo:[]
+  }
+
+  async onLoad(options) {
+    let result = await api.getItemOrders({
+      query:{ 
+        item_id: options.cid,
+        pageSize: 200,
+        page: 1
+      }
+    });
+    if(!result.data.code){
+      this.dataInfo = result.data.data.list
+    }
+    this.$apply();
+  }
+  onShow() {
+    // this.$invoke('shopCart', 'getCartListMethod');
+  }
+  computed = {
+
+  }
+  methods = {
+
+  }
+  events = {
+
+  }
+}
+
+</script>
+<style lang="less">
+.shopRecord{
+  padding: 30rpx 24rpx 30rpx;
+  box-sizing: border-box;
+  .shopList_box {
+    border-top-left-radius: 12rpx;
+    border-top-right-radius: 12rpx;
+    background-color: #fff;
+    min-height: 300rpx;
+    padding: 0 24rpx;
+    box-shadow: 0 2px 9px 0 rgba(0,0,0,.05);
+    .shopList{
+      display: flex;
+      align-items: center;
+      justify-content: left;
+      line-height: 88rpx;
+      border-bottom: 1rpx solid #F0F0F0;
+      image{
+        width: 60rpx;
+        height: 60rpx;
+        border-radius: 50%;
+      }
+      .username{
+        font-size: 28rpx;
+        color: #666;
+        margin-left:20rpx;
+        margin-right:12rpx;
+      }
+      .shop_number{
+        font-size: 28rpx;
+        color: #666;
+      }
+      .shop_time{
+        font-size: 24rpx;
+        color: #999;
+        margin-left:24rpx;
+      }
+    }
+    .shopList:last-child{
+      border-bottom: 0;
+    }
+  }
+}
+
+</style>

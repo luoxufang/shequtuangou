@@ -1,0 +1,414 @@
+<template>
+  <view class="showHome">
+    <view class="search_boxx">
+      <view class="search_box">
+        <image class="search_img" mode="aspectFill" src="../assets/images/search.png" />
+        <view style="margin-right:18rpx;" @tap="go_to_choose_city">
+          <text>{{currentCity}}</text>
+          <image style="width:18rpx;height:10rpx;margin-left:14rpx;" mode="aspectFill" src="../assets/bottom.png" />
+        </view>
+        <input
+        maxlength="100" 
+        class="textarea"
+        disabled="{{yes_or_no}}"
+        type="text" bindblur="bindManual" 
+        value="{{buy_num}}" placeholder="请输入小区名称" placeholder-style=""/>
+      </view>
+    </view>
+
+    <view class="class1">当前社区</view>
+    <!-- this.$navigate(`./selectCity`); -->
+    <view class="notice_boxx1" wx:if="{{notice_boxx1}}" @tap="go_to_choose_city()">
+      <view class="class2">{{currentCity}}</view>
+      <view class="notice_btn">请选择您的地址</view>
+    </view>
+    <view class="notice_boxx2" wx:if="{{notice_boxx2}}" @tap="goBackIndex()">
+      <view class="vipInfoBox">
+        <image mode="aspectFill" src="{{currentVipInfo.avatar_logo}}"/>
+        <view class="vipName">团长：{{currentVipInfo.realname}}</view>
+        <view class="community">{{currentVipInfo.community}}</view>
+        <view class="address">{{currentVipInfo.address}}</view>
+      </view>
+    </view>
+
+    <view class="home_name_title"><text>附近社区</text></view>
+
+    <view class="vip_info_box">
+
+      <view class="vip_info_list" wx:for="{{vip_list}}" wx:key="index" @tap="saveUserTeamInfo({{item}})" data-id="{{item.id}}">
+        <view class="img_boxx">
+          <image style="width:82rpx;height:82rpx;border-radius:50%;" mode="aspectFill" src="{{item.avatar_logo}}"/>
+        </view>
+        <view class="info_center">
+          <view class="title">
+            <view class="title_cont">{{item.community}}</view>
+            <view wx:if="{{item.distance<1000}}" class="distance">{{item.distance}}m</view>
+            <view wx:else class="distance">{{item.distance/1000}}km</view>
+          </view>
+          <view class="address">{{item.address}}</view>
+          <view class="vip_name">团长信息：{{item.realname}}</view>
+        </view>
+        <view class="right_box"><image style="width:14rpx;height:24rpx;" mode="aspectFill" src="../assets/right.png"/></view>
+      </view>
+      <view class="no_more_list" wx:if="{{vip_list.length<10}}">没有更多社区了~</view>
+    </view>
+
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import QQMapWX from '../api/qqmap-wx-jssdk.js'; // 引入SDK核心类
+  import api from '@/api/api'
+  export default class Index extends wepy.page {
+    config = {
+      navigationBarTitleText: '全民社区团',
+      navigationBarBackgroundColor: "#d91f54",
+      navigationBarTextStyle: "white",
+      usingComponents: {}
+    }
+    components = {}
+    data = {
+      buy_num:'',
+      currentCity:'',
+      currentAddress:'定位中...',
+      addressDetailList:'',
+      notice_boxx1: true,
+      notice_boxx2: false,
+      vip_list:[],
+      currentVipInfo:{},
+      yes_or_no: false,
+      latitude:'',
+      longitude:''
+    }
+    onLoad(){
+      let self = this;
+      wx.getSetting({
+        success(res) {
+          if (!res.authSetting['scope.userLocation']) {
+            self.currentCity = '地球'
+            self.currentAddress = '地球'
+            self.vip_list = [{address:'地球村北京天安门八巷八栋八号',avatar_logo:'../assets/111.png',community:'地球社区',distance:'距离???',realname:'地球村长',id:'10000'}]
+            self.$apply()
+          }else{
+            console.log('已经授权拿定位')
+          }
+        }
+      })
+      //第一次加载校验是否授权定位
+      self.checkAuthorize();
+      //第一次从首页进来
+      self.aaaaa();
+      self.$apply()
+    }
+    onShow() {
+      let self = this;
+      if(wx.getStorageSync('currentVipInfo')){
+        self.currentVipInfo = wx.getStorageSync('currentVipInfo');
+        self.notice_boxx1 = false
+        self.notice_boxx2 = true
+      }else{
+        self.notice_boxx1 = true
+        self.notice_boxx2 = false
+      }
+      if(self.currentCity!==wx.getStorageSync('currentCity')||wx.getStorageSync('currentCity')){
+        self.currentCity = wx.getStorageSync('currentCity') //不一样且有值=>优先本地
+        self.aaaaa();console.log('走show页面')
+      }
+      self.$apply()
+    }
+    methods = {
+      goBackIndex(){wx.navigateBack({ delta: 1 })},
+      go_to_choose_city(){
+        if(!this.yes_or_no) {
+          this.checkAuthorize()
+          return
+        }
+        wx.navigateTo({ url: "/pages/selectCity" });
+      },
+      async bindManual(event){
+        console.log(event.detail.value)
+        // if(!event.detail.value) return
+        const res = await api.getTeamList({ 
+          query:{
+            'lat': this.latitude,
+            'lng': this.longitude,
+            'oid': '',
+            'city_name': '',
+            'keyword': event.detail.value
+          }
+        });
+        console.log(res.data.data.list)
+        this.vip_list = res.data.data.list
+        this.$apply()
+      },
+      goToShop(){
+        this.$root.$switch(`/pages/index`);
+      },
+      tosearch() {
+        wx.navigateTo({ url: "/pages/search/main" });
+      },
+      //保存 选择团长的信息
+      async saveUserTeamInfo(vipInfo) {
+        if(!this.yes_or_no) {
+          this.checkAuthorize()
+          return
+        }
+        const res = api.saveUserTeamInfo({
+          query:{token:wx.getStorageSync('openid') ,team_id: vipInfo.id },
+          method:'POST'
+        })
+        if(!res.code){
+          wx.setStorageSync('currentVipInfo', vipInfo)
+          setTimeout(() => {
+            this.$root.$switch(`/pages/index`);
+          }, 300);
+        }
+        // this.vip_list = res.data.data.list
+        this.$apply()
+      }
+    }
+    async bbb(latitude,longitude){
+      //获取当前地理位置
+      let data = await this.getLocation1(latitude,longitude);
+      //获取社区团长
+      this.getTeamList(latitude,longitude);
+      console.log(data)
+      this.$apply()
+    }
+    async aaaaa(){
+      let self =this;
+      /**
+      测试 获取用户地理位置 / 定位深圳 并 选择多个社区
+      key:EPWBZ-V27KP-GTFDA-LJCIZ-BCTAO-SQFBJf
+      qqmap-wx-jssdk.min.js
+      */
+      wx.getLocation({
+        type: 'gcj02',
+        success: function(res) {
+          var latitude = res.latitude
+          var longitude = res.longitude
+          var speed = res.speed
+          var accuracy = res.accuracy
+          self.latitude = res.latitude
+          self.longitude = res.longitude
+          console.log(res.latitude,res.longitude)
+          if(wx.getStorageSync('currentCity')==''){
+            self.bbb(latitude,longitude) //获取当前地理位置
+          }else{
+            self.getTeamList(latitude,longitude); //获取社区团长
+          }
+          self.$apply()
+        }
+      })
+    }
+    getLocation1(lat,lng){
+      return new Promise((resolve, reject) => {
+        let self = this
+        // 实例化API核心类
+        var demo = new QQMapWX({
+            key: '4RDBZ-DOEK3-XXV3U-Y4GUX-DYJYZ-ZTFJ6' // 必填
+        });
+        // 调用接口
+        demo.reverseGeocoder({
+          location: {
+              latitude: lat,
+              longitude: lng
+          },
+          success: function(res) {
+            console.log(res.result);
+            self.currentAddress = res.result.address;
+            self.currentCity = res.result.address_component.city;
+            wx.setStorageSync('currentCity', res.result.address_component.city)
+            self.addressDetailList = self.addressDetailList2;
+            resolve('action获取城市：'+ res.result.address_component.city)
+            self.$apply()
+          },
+          fail: function(res) {
+              console.log(res);
+          },
+          complete: function(res) {
+              // console.log(res);
+          }
+        });
+      })
+    }
+    async getTeamList(latitude, longitude) {
+      const res = await api.getTeamList({
+        query:{
+          'lat': latitude,
+          'lng': longitude,
+          'oid': wx.getStorageSync('currentOid') || '',
+          'city_name': this.currentCity!==wx.getStorageSync('currentCity')?wx.getStorageSync('currentCity'):this.currentCity
+        }
+      });
+      console.log(res.data.data.list)
+      this.vip_list = res.data.data.list
+      this.$apply()
+    }
+    async checkAuthorize(){
+      // 可以通过 wx.getSetting 先查询一下用户是否授权了 "scope.userInfo" 这个 scope
+      let that = this
+      let res = await wepy.getSetting()
+      console.log(res.authSetting)
+      //就获取地理定位授权
+      if(!res.authSetting['scope.userLocation']){
+        wx.showModal({
+          title: '',
+          content: '团购服务需要您的地理定位',
+          success:function(res){
+            if (res.confirm) {
+              wepy.openSetting({
+                success(res) { console.log(res.authSetting) }
+              })
+            }
+          }
+        });
+        that.yes_or_no = false
+      }else{
+        that.yes_or_no = true
+      }
+      that.$apply()
+    }
+  }
+</script>
+<style lang='less' scoped>
+.showHome {
+  height: 100%;
+  .search_boxx{
+    padding: 24rpx 40rpx;
+    background: #d91f54;
+    .search_box{
+      display: flex;
+      justify-content: left;
+      align-items: center;
+      background-color: #fff;
+      border-radius: 34rpx;
+      padding: 0 16rpx;
+      height: 72rpx;
+      .search_img{
+        width: 40rpx;
+        height: 40rpx;
+      }
+      text{
+        margin-left: 22rpx;
+        color: #333;
+        font-weight: 600;
+      }
+      input{
+        position: relative;
+        top: 2rpx;
+      }
+    }
+  }
+  .class1{
+    padding: 26rpx 0;
+    color: #333;
+    text-align: center;
+    font-weight: 600;
+  }
+  .notice_boxx1{
+    text-align: center;
+    .class2{
+      margin-bottom: 50rpx;
+    }
+    .notice_btn{
+      width: 380rpx;
+      height: 88rpx;
+      line-height: 88rpx;
+      background: #fff;
+      border-radius: 40rpx;
+      margin: 0 auto;
+      box-shadow: 0 2px 9px 0 rgba(0,0,0,.04);
+    }
+  }
+  .notice_boxx2{
+    margin: 0 25rpx;
+    background: #fff;
+    height: 320rpx;
+    border-radius: 16rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1e3e2;
+    background: linear-gradient(135deg, #ece0e0, #fff);
+    // background:linear-gradient(to left,#fff,#f85252, #fff);
+    .vipInfoBox{
+      font-size: 26rpx;
+      text-align: center;
+      image{width:80rpx;height:80rpx;border-radius: 50%;}
+      .vipName{color: #999;}
+      .community{font-size: 34rpx;color: #333;font-weight: 600;margin: 20rpx 0;}
+      .address{color: #666;}
+    }
+  }
+  .home_name_title{
+    font-size: 36rpx;
+    color: #333;
+    line-height: 68rpx;
+    padding: 0 20rpx;
+    font-weight: 700;
+    position: relative;
+  }
+  .home_name_title:before {
+    content: '';
+    position: absolute;
+    width: 8rpx;
+    height: 38rpx;
+    background-color: #fa453c;
+    left: 0;
+    top: 0;
+    margin-top: 16rpx;
+  }
+  .vip_info_box{
+    background: #fff;
+    .vip_info_list{
+      padding: 30rpx 48rpx 30rpx 20rpx;
+      border: 1rpx solid #F6F6F6;
+      display: flex;
+      .info_center{
+        flex: 1;
+        padding-left: 28rpx;
+        .title{
+          font-size: 30rpx;
+          color: #333;
+          display: flex;
+          margin-bottom: 16rpx;
+          .title_cont{
+            flex: 1;
+          }
+          .distance{
+            font-size: 24rpx;
+            color: red;
+            display: flex;
+            align-items: center;
+            justify-content: right;
+          }
+        }
+        .address{
+          font-size: 24rpx;
+          color: #666;
+        }
+        .vip_name{
+          font-size: 24rpx;
+          color: #999;
+        }
+      }
+      .right_box{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding-left: 32rpx;
+      }
+    }
+    .no_more_list{
+      text-align: center;
+      font-size: 24rpx;
+      color: #999;
+      line-height: 140rpx;
+      background-color: #F6F6F6;
+    }
+  }
+}
+</style>
+

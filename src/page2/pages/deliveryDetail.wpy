@@ -1,0 +1,157 @@
+<template>
+  <view class="myContainer">
+    <view class="good_cont">
+      <!-- 成功 -->
+      <view class="commonStyle goods_boxx">
+        <view class="modular">
+          <view class="now_time">小区：{{info.community}}</view>
+          <view>{{info.num}}件商品</view>
+        </view>
+
+        <view class="orderGoodsList" wx:for="{{dataList}}" wx:key="{{index}}">
+          <image style="width:120rpx;height:120rpx;" mode="aspectFill" src="https://api.118zc.com{{item.default_image}}"/>
+          <view class="info_good">
+            <view class="title">{{item.title}}</view>
+            <view class="number" wx:if="{{item.sku_spec_info}}">规格：{{item.sku_spec_info}}</view>
+            <view class="money">单价：￥{{item.price}}</view>
+            <view class="now_money">数量：<text>{{item.num}}</text></view>
+          </view>
+          <!-- <view wx:if="{{dataList.info.trade_status==4}}" @tap="applyAfterSale({{item.id}})" class="absoluteBtn">申请售后</view> -->
+        </view>
+        
+      </view>
+
+    </view>
+
+    <view wx:if="{{dataList.length==0}}" class="notice">暂无任何数据</view>
+    
+  </view>
+</template>
+<script>
+import wepy from 'wepy'
+import api from '@/api/api'
+export default class delivery extends wepy.page {
+  config = {
+    navigationBarTitleText: '配送核对',
+    usingComponents: {
+      "van-search": "/components/vant/search/index"
+    }
+  }
+  data = {
+    multiIndex: [0, 0],
+    //多列选择初始值
+    multiArray: [
+      ['一号线路', '二号线路', '三号线路'], 
+      ['1-1号团长', '1-2号团长', '1-3号团长', '1-4号团长', '1-5号团长']
+    ],
+    // 待处理 二列值数组
+    multiArray2: [
+      ['1-1号团长', '1-2号团长', '1-3号团长', '1-4号团长', '1-5号团长'],
+      ['2-1号团长', '2-2号团长', '2-3号团长', '2-4号团长', '2-5号团长'],
+      ['3-1号团长', '3-2号团长', '3-3号团长', '3-4号团长', '3-5号团长']
+    ],
+    inputValue: '',
+    value: '',
+    dataList:[],
+    info: {}
+  }
+  async onLoad(options){
+    console.log(options.id)
+
+    let rlt = await api.getDeliveryOrderDetail({
+      query:{
+        token: wx.getStorageSync('openid'),
+        id: options.id
+      },
+      method:"POST"
+    });
+    if (rlt.data.code==0) {
+      this.info = rlt.data.data.info
+      this.dataList = rlt.data.data.list
+    }
+    this.$apply();
+  }
+  methods = {
+    onSearch(event){
+      console.log(event.detail)
+    },
+    onSearchFn(){
+      if(this.inputValue){
+        console.log(this.inputValue)
+      }
+    },
+    right_off_recharge(){}
+  }
+}
+</script>
+<style lang="less">
+.myContainer{
+  background-color: #f7f7f7;
+  .selectBtn{
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content:center;
+    height: 68rpx;
+  }
+
+  .good_cont{
+    padding: 24rpx 24rpx 100rpx 24rpx;
+    .commonStyle{
+      border-radius: 16rpx;
+      background-color: #fff;
+      box-shadow: 0 2px 9px 0 rgba(0,0,0,.04);
+      overflow: hidden;
+      margin-bottom: 20rpx;
+      .modular{
+        display: flex;
+        padding: 30rpx;
+        font-size: 26rpx;
+        color: #999;
+        border-bottom: 1rpx solid #f6f6f6;
+        .now_time{flex: 1;}
+        .now_time.aaa{
+          font-size: 28rpx;
+          color: #333;
+        }
+      }
+      .orderGoodsList{
+        display: flex;
+        align-items: center;
+        padding: 20rpx 30rpx;
+        border-bottom: 1rpx solid #f6f6f6;
+        position: relative;
+        .info_good{
+          padding-left: 24rpx;
+          font-size:26rpx;
+          color: #999;
+          .title{font-size: 30rpx;color: #333;}
+          .now_money{color: #333;text{font-size: 30rpx;color: #FF6356;}}
+        }
+        .absoluteBtn{
+          width: 126rpx;
+          height: 40rpx;
+          position: absolute;
+          bottom: 30rpx;
+          right: 28rpx;
+          border-radius: 34rpx;
+          color: #666;
+          border: 1rpx solid #eee;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size:24rpx;
+        }
+      }
+      .orderGoodsList:last-child{
+        border-bottom:0;
+      }
+    }
+  }
+  .notice{
+    font-size: 28rpx;
+    color:#999;
+    text-align: center;
+  }
+}
+</style>

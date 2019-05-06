@@ -1,0 +1,913 @@
+<template>
+  <view class="goodDetail">
+    <import src="../components/wxParse/wxParse.wxml"/>
+    <view class="content_box">
+      <view class="swiper">
+        <swiper class="swiper-container" indicator-dots="false" bindchange="changeSwiper" indicator-active-color="rgb(217,31,84)" interval="3000" duration="500">
+          <swiper-item class="swiper-item" wx:for="{{ detailInfo.list_image }}" wx:key="index">
+            <image mode="aspectFill" src="https://api.118zc.com{{item}}" class="slide-image" />
+          </swiper-item>
+        </swiper>
+        <view class="showNumber_box"><view class="showNumber">{{currentIndex}}/{{bannerLength}}</view></view>
+        <button class="share_box" open-type="share"><image mode="aspectFill" src="../assets/images/share.png"/><text>分享</text></button>
+      </view>
+
+      <view class="modiule_box">
+        <view class="commonStyle goodInfo">
+          <view class="money_and_time">
+            <text class="fuhao">￥</text><text class="money">{{detailInfo.price}}</text>
+            <label>￥{{detailInfo.mkt_price}}</label>
+          </view>
+          <view class="money_and_time2">
+            <view class="position_box">
+              <view class="time2">
+                <view style="position:relative;top:-18rpx;">距结束</view>
+                <i-count-down style="position:absolute;top:12rpx;width:180rpx;left:12rpx;"
+                  target="{{targetTime1}}"
+                  show-day="{{true}}"
+                  clear-timer="{{clearTimer}}"
+                ></i-count-down>
+              </view>
+              <view class="test" style="left:{{advance}};"></view>
+            </view>
+          </view>
+
+          <view class="title">{{detailInfo.title}}</view>
+          <view class="self_mention">
+            <image class="image" mode="aspectFill" src="../assets/123.png" />
+            <text>现在下单，预计{{getTime}}可自提</text>
+          </view>
+          <view wx:if="{{is_limit}}" class="sales active1"><label>限购</label><text>每人限购{{detailInfo.limit_max_buy}}份</text></view>
+          <view class="sales active2"><label>销量</label><text>已售  {{detailInfo.sold_quantity}}  件，剩余<text style="margin-left:0;color:#FF4444;">  {{detailInfo.store}}  </text>件</text></view>
+        </view>
+       
+        <view class="commonStyle activity" wx:if="{{couponsArr.length}}">
+          <view class="active">
+            <label>活动</label>
+            <van-tag class="van-tag" round type="danger" wx:for="{{couponsArr}}">{{item}}</van-tag>
+            <!-- <text wx:for="{{detailInfo.couponsArr}}" wx:key="index">{{item}}</text> -->
+            <!-- <text>{{couponsArr}}</text> -->
+          </view>
+        </view>
+
+        <!-- 购买记录 -->
+        <view class="commonStyle shopRecord">
+          <view class="recordTitle">
+            <view class="title">购买记录</view>
+            <view class="sell_notice" @tap="go_to_shopRecord">
+              <view>已有 <text style="color:#FF4444;">{{avatar_Img.total}}</text> 人购买</view>
+              <image style="width:14rpx;height:24rpx;margin-left:16rpx;" mode="aspectFill" src="../assets/right.png"/>
+            </view>
+          </view>
+          <view class="img_list_box">
+            <block wx:for="{{avatar_Img.list}}" wx:key="index">
+              <view class="avatar_box">
+                <image mode="aspectFill" src="{{item.avatar_logo}}" />
+              </view>
+            </block>
+            <view class="avatar_box class" @tap="go_to_shopRecord" wx:if="{{showMoreAvatar}}">
+              <image mode="aspectFill" src="../assets/more.png" />
+            </view>
+          </view>
+        </view>
+      </view>
+      <!-- 详情 -->
+      <view class="good_detail_img" wx:if="{{detailInfo.contents}}">
+        <view class="weui-loadmore weui-loadmore_line" style="width:42%;font-size:38rpx;">
+          <view class="weui-loadmore__tips weui-loadmore__tips_in-line">商品详情</view>
+        </view>
+        <view style="background:#fff;">
+          <view class="wxParse">
+            <template is="wxParse" data="{{wxParseData:article.nodes}}"/>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!--TODO 滑出面板可以重构-->
+    <view class="goods-buy-panel-cover" catchtouchmove="myCatchTouch" @tap="close"  wx:if="{{display}}"></view>
+    <!--购买面板-->
+    <view catchtouchmove="myCatchTouch" class="goods-buy-panel-container {{ display ? 'goods-buy-panel-show' : '' }}" >
+      <view class="tanchaung">
+        <view class="cont">
+          <image class="delete_img" @tap="close" mode="aspectFill" src="../assets/images/del.png"/>
+          <view class="min_img"><image mode="aspectFill" src="https://api.118zc.com{{defaultImg}}"/></view>
+          <view class="right_proInfo">
+            <view class="title">{{detailInfo.sub_title}}</view>
+            <view class="fuhao_box">
+              <text class="fuhao">￥</text><text class="money">{{tempPrice}}</text>
+              <!-- <label>￥49.90</label> -->
+            </view>
+            <view wx:if="{{choosed_goods_no.length}}" class="choosed">请选择 
+            <repeat wx:for="{{choosed_goods_no}}" wx:key="{{index}}">
+              {{item}} </repeat>
+            </view>
+            <view wx:else  class="choosed">已选：
+              <repeat wx:for="{{choosed_goods}}" wx:key="{{index}}">
+                  “<text>{{item}}</text>”
+              </repeat>
+            </view>
+          </view>
+        </view>
+        <scroll-view style="height:534rpx;position:relative;" android:scrollbars="none" scroll-y="true" class="my_table_list scroll-view_H">
+          <view class="color_class" wx:for="{{spec_desc}}" wx:for-index="idx" wx:key="{{index}}">
+            <view class="title">{{item.prop_name}}</view>
+            <view class="color_list_box">
+              <repeat for="{{item.child}}" key="item">
+                <text wx:if="{{!item.flag}}" class="color_list {{item.active?'commonColor commonBorder' : ''}}" 
+                @tap="addVal({{idx}},{{item.prop_value_id}},{{item.prop_value_image}})" data-index="{{index}}">{{item.prop_value}}</text>
+                <!-- 置灰 -->
+                <text wx:if="{{item.flag}}" class="color_list default">{{item.prop_value}}</text>
+              </repeat>
+            </view>
+          </view>
+          <!-- 加减数量 -->
+          <view class="jiaAndJian">
+            <view class="txt">购买数量</view>
+            <view class="buy-num">
+              <view class="jian-btn {{quantity==1? 'disabled' : ''}}" catchtap="jianBtnTap" data-index="{{index}}" data-id="{{item.id}}">-</view>
+              <input type="number" value="{{quantity}}" disabled/>
+              <view class="jia-btn {{quantity==100? 'disabled' : ''}}" catchtap="jiaBtnTap" data-index="{{index}}" data-id="{{item.id}}">+</view>
+            </view>
+          </view>
+        </scroll-view>
+        <view wx:if="{{!bugNowBtn}}" class="add_cart_btn" @tap="join_cart()"><view class="colorBtn">确定</view></view>
+        <view wx:if="{{bugNowBtn}}" class="bug_now_btn" @tap="bug_now()"><view class="colorBtn">确定(立即)</view></view>
+      </view>
+    </view>
+    <!-- 回顶部按钮 -->
+    <view class="goTop" wx:if="{{goTopDiv}}" @tap="go_back_top"><image style="width:70rpx;height:70rpx;" mode="aspectFill" src="../assets/top.png"/></view>
+    <!-- 底部 点击 弹弹窗 -->
+    <van-goods-action>
+      <van-goods-action-icon icon="wap-home" url="/pages/index" link-type="switchTab" text="回首页" />
+      <van-goods-action-icon icon="cart-o" bind:click="onClickIcon" text="购物车" info="{{infoVal}}" />
+      <van-goods-action-button text="加入购物车" bind:click="onClickButton(0)" type="warning" />
+      <van-goods-action-button bind:click="onClickButton(1)" text="立即购买" />
+    </van-goods-action>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import tip from '@/utils/tip'
+  import api from '@/api/api'
+  import aaa from '@/utils/aaa'
+  import WxParse from '../components/wxParse/wxParse'
+  export default class Index extends wepy.page {
+    config = {
+      navigationBarTitleText: '商品详情',
+      usingComponents: {
+        "van-goods-action": "/components/vant/goods-action/index",
+        "van-goods-action-icon": "/components/vant/goods-action-icon/index",
+        "van-goods-action-button": "/components/vant/goods-action-button/index",
+        "van-tag": "/components/vant/tag/index",
+        "i-count-down": "../resources/ui/count-down/index"
+      }
+    }
+    data = {
+      bugNowBtn:false,
+      display: false,
+      infoVal:'',
+      bannerLength:'',
+      currentIndex:'1',
+      getTime:'',
+      avatar_Img:[],
+      detail: {'id':1,'name':'测试','imageUrl':'../assets/111.png','bbb':'bbb'},
+      showMoreAvatar: false,
+      targetTime1: 0,
+      clearTimer: false,
+      advance:'-79rpx',
+      detailInfo: {},
+      goods: {},
+      action: 'cart',
+      spec_desc:[],
+      currentIndex1:null,
+      choosed_goods:[],
+      choosed_goods_no:['规格'],
+      attrValueList: [],
+      options:'',
+      couponsArr:[],
+      defaultImg:'',
+      tempPrice:'0.00',
+      quantity: 1,//商品数量
+      //选中的值，实始化时需要
+      item_sku_ret:[],
+      selectVal:[],
+      allData:{},
+      cacheData:{},
+      keysData:[],
+      skuVala:[],
+      goTopDiv: false
+    }
+    async onLoad(options, preloadData) {
+      this.options = options.sourcePage
+      // if (preloadData.preload) {
+        // console.log('拿到A页面preload过来的数据了：', preloadData.preload.preload.data);
+        // this.detailInfo = preloadData.preload.preload.data;
+        // this.targetTime1 = preloadData.preload.preload.data.end_sell_time*1000
+        // let coupons = this.detailInfo.couponsArr.map((item)=>{return item})
+        // this.couponsArr = coupons.join("，")
+        // this.bannerLength = preloadData.preload.preload.data.list_image.length;
+        // this.defaultImg = preloadData.preload.preload.data.spec_desc[0].child[0].prop_value_image
+        // this.tempPrice = preloadData.preload.preload.data.item_sku_ret[0].price
+        // //初始化一级属性状态
+        // this.spec_desc = preloadData.preload.preload.data.spec_desc;
+        // this.item_sku_ret = preloadData.preload.preload.data.item_sku_ret
+        // this.$apply();
+        this.go_to_goodDetail(options.sourcePage) //马上马上马上
+        this.statisticsStore()
+        this.targetTime1 = new Date().getTime() + 8643000000
+      // }
+      //我-时间
+      let myDate = new Date();
+      let getTime = (myDate.getMonth()+1) +'月'+ (myDate.getDate()+1) +'日'
+      this.getTime = getTime
+      //我-拿购买记录9个
+      let result = await api.getItemOrders({
+        query:{ item_id:options.sourcePage, pageSize:9, page:1}
+      });
+      if(!result.data.code){
+        this.avatar_Img = result.data.data
+        if(result.data.data.total>9){
+          this.showMoreAvatar = true
+        }
+      }
+      this.$apply();
+    }
+    onShow(){
+      if(!wx.getStorageSync('openid')){
+        this.$root.$switch(`/pages/index`);
+        return
+      }
+      // 对详情页的灰色样式的js兼容
+      let systemWidth = wx.getStorageSync('systemWindowWidth');
+      if( systemWidth==360 || systemWidth==320){
+        this.advance = '-80rpx'
+      }
+      if(this.$parent.globalData.commonCart){
+        this.refreshCart()
+      }
+    }
+    refreshCart(){//拿全局变量-刷新购物车
+      this.infoVal = this.$parent.globalData.commonCart
+      this.$apply()
+    }
+    onUnload() {
+      this.clearTimer = true;
+      console.log("定时器关闭")
+    }
+    methods = {
+      go_to_shopRecord(){
+        this.$navigate('./shopRecord?cid='+ this.options);
+      },
+      changeSwiper(event){
+        this.currentIndex = event.detail.current+1
+      },
+      goToShop(){
+        this.$root.$switch(`/pages/index`);
+      },
+      onClickIcon() {
+        this.$root.$switch(`/pages/shopCart`);
+      },
+      jianBtnTap(){
+        if(this.quantity<=1){ return }
+        this.quantity--
+      },
+      jiaBtnTap(){
+        if(this.quantity>100){ return }
+        this.quantity++
+      },
+      onClickButton(action) {
+        if(this.detailInfo.spec_desc){//有规格的情况下
+          this.display = true;
+          if(action==1){
+            this.bugNowBtn=true
+          }else{
+            this.bugNowBtn=false
+          }
+        }else{//没有规格 this.infoVal++
+          if(action==1){
+            this.bug_now_request(0)
+          }else{
+            this.join_cart_request(0)
+          }
+        }
+        this.$apply();
+      },
+      myCatchTouch: function () { //弹窗时阻止冒泡（滑动）
+        // console.log('stop user scroll it!');
+        return;
+      },
+
+      addVal(index,val, info){
+        console.log(index,val,info)
+        //替换默认图片
+        if(info){ this.defaultImg = info }
+        //改变颜色，及更改值
+        for(let i=0;i<this.spec_desc[index].child.length;i++){
+          if(val == this.spec_desc[index].child[i].prop_value_id){
+            if(this.spec_desc[index].child[i].active == true){
+              this.spec_desc[index].child[i].active = false
+              this.selectVal[index] = 0;
+            }else{
+              this.selectVal[index] = val;
+              this.spec_desc[index].child[i].active = true
+            }
+          }else{
+            this.spec_desc[index].child[i].active = false
+          }
+        }
+        //----------111111111111-------------
+        var tempPrice=[]
+        for(let i=0;i < this.selectVal.length;i++){
+          if(this.selectVal[i] > 0 ){
+            tempPrice.push(this.selectVal[i])
+          }
+        }
+        if(typeof(this.getPrice(tempPrice.join(';')).prices)!=='undefined'){
+          this.tempPrice = this.getPrice(tempPrice.join(';')).prices[0]
+        }
+        // console.log(this.getPrice(tempPrice.join(';')),9999877,this.selectVal)
+        //-----------111111111111-----------
+        for(let i=0;i < this.spec_desc.length;i++){
+          //跳过当前层
+          if(i == index){
+              continue;
+          }
+          let tempSelect = []
+          tempSelect =  this.selectVal.concat()
+          for(let j=0; j<this.spec_desc[i].child.length;j++){
+            //跳过已选择的
+            if(tempSelect[i]>0 && tempSelect[i] == this.spec_desc[i].child[j].prop_value_id){
+                continue;
+            }
+            //组合值判断,判断当前
+            tempSelect[i] = this.spec_desc[i].child[j].prop_value_id
+            //组合
+            let temp = []
+            for(let k=0;k < tempSelect.length;k++){
+              //剔除0值
+              if(tempSelect[k] !=0 ){
+                temp.push(tempSelect[k])
+              }
+            }
+            //排序，小到大,发现问题再排
+            //禁点
+            if(aaa.getNum(temp.join(';'), this.cacheData, this.keysData, this.allData) <= 0){
+              this.spec_desc[i].child[j].flag  = true
+            }else{
+              this.spec_desc[i].child[j].flag  = false
+            }
+          }
+        }
+        console.log(this.spec_desc,9999)
+        console.log(this.selectVal)
+        // spec_desc循环添加两个标记位
+        let pofice = []
+        let goods_yes = []
+        let allTitle = []
+        let choosedValue = this.spec_desc.map((item)=>{
+          item.child.map((item2)=>{
+            this.selectVal.map((index)=>{
+              if(item2.prop_value_id == index){
+                pofice.push(item2.prop_value)
+                goods_yes.push(item.prop_name)
+              }
+              return item2.prop_value
+            })
+          })
+          allTitle.push(item.prop_name)  //获取全部规格标题
+        })
+        console.log(goods_yes)
+        //处理标题
+        for(let i = 0; i < allTitle.length; i++) {
+          for(let j = 0; j < goods_yes.length; j++) {
+            if(allTitle[i] == goods_yes[j]){
+              allTitle.splice(i,1);
+            }
+          }
+        }
+        // console.log('处理后:'+allTitle)
+        this.choosed_goods = pofice
+        this.choosed_goods_no = allTitle
+      },
+      join_cart(){
+        if(this.choosed_goods.length !== this.spec_desc.length){
+          tip.toast('请选择商品属性')
+        }else{
+          let selectVal = this.selectVal.sort(function(a,b){
+            return a>b ? 1:-1
+          })
+          console.log(selectVal)
+          //获取sku_id
+          console.log('sku_id:'+this.skuVala[this.selectVal.join(";")])
+          this.join_cart_request(this.skuVala[this.selectVal.join(";")])
+        }
+      },
+      bug_now(){
+        if(this.choosed_goods.length !== this.spec_desc.length){
+          tip.toast('请选择商品属性')
+        }else{
+          let selectVal = this.selectVal.sort(function(a,b){
+            return a>b ? 1:-1
+          })
+          this.bug_now_request(this.skuVala[this.selectVal.join(";")])
+        }
+      }
+    }
+    async go_to_goodDetail(id){
+      const preloadData = await api.getItemDetail({query:{ item_id:id }});
+      this.targetTime1 = preloadData.data.data.end_sell_time*1000
+      if (!preloadData.data.code) {
+        console.log('拿到A页面preload过来的数据了：', preloadData.data.data);
+        this.detailInfo = preloadData.data.data;
+        this.targetTime1 = parseInt(preloadData.data.data.end_sell_time*1000)
+        let coupons = this.detailInfo.couponsArr.map((item)=>{return item})
+        this.couponsArr = coupons.join("，")
+        this.bannerLength = preloadData.data.data.list_image.length;
+        if(preloadData.data.data.spec_desc!==null){
+          this.defaultImg = preloadData.data.data.spec_desc[0].child[0].prop_value_image
+          this.tempPrice = preloadData.data.data.item_sku_ret[0].price
+        }
+        try {
+          let htmlContent = WxParse.wxParse('article', 'html', this.detailInfo.contents, this, 6)
+          //this.htmlParserTpl = this[this.parserName];
+          this.htmlParserTpl = htmlContent['article']
+        } catch (e) {
+          console.warn('kinerHtmlParser:', '没有任何内容需要转换', e)
+        }
+// 000000000000000000000000000000
+        //初始化一级属性状态
+        this.spec_desc = preloadData.data.data.spec_desc;
+        this.item_sku_ret = preloadData.data.data.item_sku_ret
+        this.$apply();
+
+        if(this.spec_desc){
+          //spec_desc循环添加两个标记位
+          let spec_desc = this.spec_desc.map((item)=>{
+            item.child.map((item)=>{
+              item.flag = false
+              item.active = false
+              return item
+            })
+            return item
+          })
+          console.log(this.spec_desc)
+
+          //初始化数据
+          for(let i=0;i < this.item_sku_ret.length;i++){
+            let temp = '';
+            for(let j=0;j<this.item_sku_ret[i].spec_desc.length;j++){
+              temp = temp + this.item_sku_ret[i].spec_desc[j].value + ";"
+            }
+            temp = temp.slice(0, -1);
+            this.allData[temp] = {
+              price: this.item_sku_ret[i].price,
+              count:  this.item_sku_ret[i].store,
+            }
+          }
+          console.log(this.allData)
+
+          for(let i=0;i < this.spec_desc.length;i++){
+            // 记录选值
+            this.selectVal[i] = 0
+            let temp = []
+            for(let j=0; j<this.spec_desc[i].child.length;j++){
+              temp.push(this.spec_desc[i].child[j].prop_value_id)
+            }
+            this.keysData.push(temp)
+          }
+          console.log('keysData:'+this.keysData)
+
+          //初始化
+          this.initSku()
+          for(let i=0;i < this.spec_desc.length;i++){
+            for(let j=0; j<this.spec_desc[i].child.length;j++){
+              //禁点
+              // console.log(this.getNum(this.spec_desc[i].child[j].prop_value_id),'9999',this.spec_desc[i].child[j].prop_value_id)
+              if(aaa.getNum(this.spec_desc[i].child[j].prop_value_id, this.cacheData, this.keysData, this.allData) <= 0){
+                this.spec_desc[i].child[j].flag  = true
+                break;
+              }else{
+                this.spec_desc[i].child[j].flag  = false
+              }
+            }
+          }
+          
+          let skuVal = []
+          let skuVala = []
+          for(let i=0; i< this.item_sku_ret.length; i++){
+            skuVal=[]
+            for(let j=0; j< this.item_sku_ret[i].spec_desc.length; j++){
+              //skuVal[i].id = this.item_sku_ret[i].id
+              skuVal.push(this.item_sku_ret[i].spec_desc[j].value)
+            }
+            skuVal = skuVal.sort(function(a,b){
+              return a>b ? 1:-1
+            })
+            let bbb = skuVal.join(';')
+            skuVala[bbb] = this.item_sku_ret[i].id
+          }
+          this.skuVala = skuVala
+          console.log(skuVala)
+        }
+// 000000000000000000000000000000
+      }
+      this.$apply();
+    }
+    //----------------------------------初始化组合------------------------------------
+    initSku(){
+      let i, j, skuKeys = aaa.getObjKeys(this.allData);
+      for(i = 0; i < skuKeys.length; i++) {
+        var skuKey = skuKeys[i];//一条SKU信息key
+        var sku = this.allData[skuKey]; //一条SKU信息value
+        var skuKeyAttrs = skuKey.split(";"); //SKU信息key属性值数组
+        var len = skuKeyAttrs.length;
+        //对每个SKU信息key属性值进行拆分组合
+        var combArr = aaa.arrayCombine(skuKeyAttrs);
+        for(j = 0; j < combArr.length; j++) {
+            this.add2SKUResult(combArr[j], sku);
+        }
+        //结果集接放入SKUResult
+        this.cacheData[skuKey] = {
+            count:sku.count,
+            prices:[sku.price]
+        }
+      }
+      this.$apply()
+    }
+
+    //把组合的key放入结果集SKUResult ***********
+    add2SKUResult(combArrItem, sku) {
+        var key = combArrItem.join(";");
+        if(this.cacheData[key]) {//SKU信息key属性·
+            this.cacheData[key].count += sku.count;
+            this.cacheData[key].prices.push(sku.price);
+        } else {
+            this.cacheData[key] = {
+                count : sku.count,
+                prices : [sku.price]
+            };
+        }
+        this.$apply()
+    }
+
+    getPrice(key) {
+      //检查是否已计算过
+      if (typeof this.cacheData[key] != 'undefined') {
+          return this.cacheData[key];
+      }
+      return '0.00'
+    }
+    //----------------------------------初始化组合 结束------------------------------------
+    async join_cart_request(sku_id){
+      let result = await api.addCart({
+        query:{ token:wx.getStorageSync('openid'), item_id:this.options, quantity: this.quantity, sku_id:sku_id,is_checked:1},
+        method:"POST"
+      });
+      if(!result.data.code){
+        console.log(result.data.msg)
+        this.close()
+        const cba = await this.$parent.changeCartNumber()
+        this.refreshCart()
+        tip.toast('加入购物车成功')
+      }else{
+        tip.toast(result.data.msg)
+      }
+      this.$apply();
+    }
+    async bug_now_request(sku_id){
+      // let result = await api.getExpectedTradeDetail({
+      //   query:{ 
+      //     token: wx.getStorageSync('openid'), 
+      //     item_id: this.options, 
+      //     coupon_id: 0, 
+      //     sku_id: sku_id,
+      //     quantity: this.quantity
+      //   },
+      // });
+      // if(!result.data.code){
+      //   console.log(result.data.data)
+      //   wx.setStorageSync('confirmData', result.data.data)//保存"确认订单"的数据
+      //   wx.setStorageSync('sku_id', this.skuVala[this.selectVal.join(";")])
+      // }
+      wepy.navigateTo({url: `./orderConfirm?id=${this.options}&sku_id=${sku_id}&quantity=${this.quantity}`})//跳转"订单确认"
+      this.close()
+      this.$apply();
+    }
+    close () {
+      console.info('[SilderPanel] clear');
+      this.goods = null;
+      this.action = 'cart';
+      this.display = false;
+      this.bugNowBtn = false
+    }
+    async statisticsStore(itemStat){
+      const result = await api.statisticsStore({
+        query:{
+          token: wx.getStorageSync('openid'),
+          itemStat: itemStat?itemStat:'',
+          item_id: this.options
+        },
+        method:"POST",
+        noloading:1
+      })
+      if(!result.data.code){ console.log(result.data.msg) }
+    }
+    go_back_top(){
+      wx.pageScrollTo({
+        scrollTop: 0
+      })
+    }
+    //监听屏幕滚动 判断上下滚动
+    onPageScroll (ev) {
+      var _this = this;
+      //判断浏览器滚动条上下滚动
+      if (ev.scrollTop > 180) {
+        //向下滚动
+        _this.goTopDiv = true
+      } else {
+        //向上滚动
+        _this.goTopDiv = false
+      }
+      _this.$apply();
+    }
+    /**
+     * 页面分享
+     */
+    onShareAppMessage () {
+      const {id, name, imageUrl} = this.detail;
+      return {
+        title: this.detailInfo.title,
+        // imageUrl: imageUrl,
+        path: `/pages/goodDetail?sourcePage=${this.options}`
+      };
+    }
+  }
+</script>
+<style lang='less' scoped>
+@import '../utils/style.less';
+@import "../components/wxParse/wxParse.wxss";
+/*购买面板*/
+
+.goods-buy-panel-show{
+  transform: translateY(0);
+}
+
+/*遮罩层*/
+.goods-buy-panel-cover{
+  width: 100%;
+  height: 100%;
+  position: fixed;
+  top: 0;
+  background-color: black;
+  -webkit-filter:opacity(.5);
+  z-index: 100;
+}
+.goTop{
+  height: 80rpx;
+  width: 80rpx;
+  position: fixed;
+  bottom: 140rpx;
+  background: rgba(0,0,0,.5);
+  right: 50rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.goodDetail {
+  height: 100%;
+  .swiper {
+    width: 100%;
+    height: 448rpx;
+    position: relative;
+    .swiper-container {
+      width: 100%;
+      height: 100%;
+      .swiper-item {
+        width: 100%;
+        height: 100%;
+        .slide-image {
+          width: 100%;
+          height: 100%;
+        }
+      }
+    }
+    .showNumber_box{
+      width: 100%;
+      position: absolute;
+      bottom: 100rpx;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      .showNumber{
+        background: rgba(0, 0, 0, 0.5);
+        color: #fff;
+        text-align: center;
+        font-size: 24rpx;
+        border-radius: 24rpx;
+        width: 76rpx;
+      }
+    }
+    .share_box{
+      display: flex;
+      align-items: center;
+      justify-content: left;
+      width: 150rpx;
+      height: 64rpx;
+      color: #fff;
+      position: absolute;
+      top: 82rpx;
+      right: 0;
+      background: #FF4444;
+      background: -moz-linear-gradient(left, #FF4444 0%, #FC6F5B 100%);
+      background: -webkit-gradient(linear, left top, left right, color-stop(0%,#FF4444), color-stop(100%,#FC6F5B));
+      background: -webkit-linear-gradient(left, #FF4444 0%,#FC6F5B 100%);
+      background: -o-linear-gradient(left, #FF4444 0%,#FC6F5B 100%);
+      background: -ms-linear-gradient(left, #FF4444 0%,#FC6F5B 100%);
+      background: linear-gradient(to right, #FF4444 0%,#FC6F5B 100%);
+      border-radius: 0;
+      border-top-left-radius: 32rpx;
+      border-bottom-left-radius: 32rpx;
+      padding: 0;
+      font-size:28rpx;
+      image{
+        width: 40rpx;
+        height: 40rpx;
+        margin:0 12rpx 0 28rpx;
+      }
+    }
+    button::after{
+      border:0;
+    }
+  }
+  .modiule_box{
+    padding: 0 24rpx;
+    .commonStyle{
+      border-radius: 16rpx;
+      background-color: #fff;
+      padding: 30rpx 24rpx;
+      box-shadow: 0 2px 9px 0 rgba(0,0,0,.04);
+    }
+    .goodInfo{
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+      position: relative;
+      .money_and_time{
+        width: 100%;
+        position: absolute;
+        top: -88rpx;
+        left: 0;
+        height: 90rpx;
+        background: #FF4444;
+        color:#fff;
+        line-height: 90rpx;
+        border-top-left-radius: 16rpx;
+        border-top-right-radius: 16rpx;
+        .fuhao{ font-size: 20rpx;margin-left: 20rpx; }
+        .money{ font-size: 40rpx; }
+        label{ font-size: 28rpx;text-decoration:line-through;margin-left: 12rpx;}
+      }
+      .money_and_time2{
+        width: 210rpx;
+        position: absolute;
+        top: -98rpx;
+        right: 0;
+        height: 100rpx;
+        color:#fff;
+        background: #4D4445;
+        border-top-left-radius: 16rpx;
+        border-top-right-radius: 16rpx;
+        font-size: 0;
+        box-shadow:-3px 0 8px -4px #000;
+        .position_box{
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width:100%;height:100%;
+          position:relative;
+        }
+        .time2{
+          text-align: center;
+          color: #F2D612;
+          font-size: 28rpx;
+        }
+        .test{
+          position:absolute;
+          left: -77rpx;
+          bottom:0;
+          width:0; height:0;
+          border-color:#4D4445 transparent;
+          border-width: 0 0 94rpx 82rpx;
+          border-style: solid;
+        }
+      }
+      .title{
+        font-size: 34rpx;
+        color: #333;
+        font-weight: 700;
+      }
+      .self_mention{
+        display: flex;
+        align-items: center;
+        justify-content: left;
+        padding-top: 20rpx;
+        .image{
+          width: 26rpx;
+          height: 26rpx;
+          margin-right: 20rpx;
+        }
+        text{
+          font-size: 26rpx;
+          color: #999;
+        }
+      }
+      .sales.active1{
+        padding: 20rpx 0;
+        border-bottom: 1rpx solid #F0F0F0;
+      }
+      .sales.active2{
+        padding-top: 20rpx;
+      }
+      .sales{
+        font-size: 28rpx;
+        color: #333;
+        text{
+          font-size: 26rpx;
+          color:#666;
+          margin-left: 20rpx;
+        }
+        label{
+          font-weight: 700;
+        }
+      }
+    }
+    .activity{
+      margin-top: 24rpx;
+      .active{
+        display: flex;
+        align-items: center;
+        justify-content: left;
+        label{
+          font-size: 28rpx;
+          color: #333;
+          font-weight: 700;
+        }
+        .van-tag{
+          margin: 0 20rpx;
+        }
+      }
+    }
+    .shopRecord{
+      margin-top: 24rpx;
+      .recordTitle{
+        display: flex;
+        align-items: center;
+        padding-bottom: 30rpx;
+        border-bottom: 1rpx solid #F0F0F0;
+        .title{
+          font-size: 32rpx;
+          font-weight: 700;
+          color: #333;
+        }
+        .sell_notice{
+          font-size: 26rpx;
+          color: #999;
+          text-align: right;
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+        }
+      }
+      .img_list_box{
+        display: flex;
+        flex-wrap:wrap;
+        padding-top:20rpx;
+        .avatar_box{
+          width: 20%;
+          height: 108rpx;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size:0;
+          image{
+            width: 90rpx;
+            height: 90rpx;
+            border-radius: 50%;
+          }
+        }
+      }
+    }
+  }
+  .good_detail_img{
+    padding-top: 50rpx;
+    padding-bottom: 102rpx;
+    image{
+      width: 100%;
+    }
+  }
+}
+</style>

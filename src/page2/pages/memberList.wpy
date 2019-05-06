@@ -1,0 +1,124 @@
+<template>
+  <view class="myContainer">
+    <van-search
+      value="{{ value }}"
+      placeholder="输入会员昵称或手机号查询"
+      use-action-slot
+      bind:search="onSearch"
+      bind:change="bindChange"
+    >
+      <view slot="action" @tap="onSearchFn">搜索</view>
+    </van-search>
+
+    <view class="reflectRecode">
+      <!-- wx:for="{{dataList}}" key="{{index}}" -->
+      <view class="list" wx:if="{{dataList.length!==0}}" wx:for="{{dataList}}" wx:key="{{index}}">
+        <image style="width:70rpx;height:70rpx;margin-right:20rpx;border-radius:50%;" src="{{item.avatar_logo}}" alt=""/>
+        <view class="titleAndTile">
+          <view class="title">{{item.nickname}}</view>
+          <view class="titme">付款订单:  {{item.all_num}}</view>
+        </view>
+        <view class="moneyNumber">
+          <view wx:if="{{item.by_time}}" style="font-size:24rpx;color#999;">最近成交:{{item.by_time}}</view>
+          <view wx:else style="font-size:24rpx;color#999;">最近成交: 0</view>
+          <view style="font-size:24rpx;color#666;">消费总金额: <span style="color:red;">￥{{item.payment}}</span></view>
+        </view>
+        <!-- <image src="../../assets/images/right.png" style="width:7px;height:24rpx;margin-left:22rpx;"/> -->
+      </view>
+
+    </view>
+
+    <view wx:if="{{dataList.length==0&&inputValue}}" class="notice">没有搜到数据</view>
+    <view wx:elif="{{dataList.length==0&&!inputValue}}" class="notice">暂无任何数据</view>
+  </view>
+</template>
+<script>
+import wepy from 'wepy'
+import api from '@/api/api'
+export default class memberList extends wepy.page {
+    config = {
+      navigationBarTitleText: '旗下会员',
+      usingComponents: {
+        "van-search": "/components/vant/search/index"
+      }
+    }
+    data = {
+      inputValue: '',
+      value: '',
+      dataList:[]
+    }
+    async onLoad(){
+      this.getUserList('')
+    }
+    async getUserList(keyword){
+      let rlt = await api.getTeamUserList({
+        query:{
+          token: wx.getStorageSync('openid'),
+          keyword: keyword
+        },
+        method:"POST"
+      });
+      if (rlt.data.code==0) {
+        this.dataList = rlt.data.data.list
+      }
+      this.$apply()
+    }
+    methods = {
+      bindChange(event){
+        this.inputValue = event.detail
+        if(!this.inputValue){
+          this.getUserList('')
+        }
+        this.$apply();
+      },
+      onSearch(event){
+        if(this.inputValue){
+          console.log(event.detail)
+          this.getUserList(event.detail)
+        }
+      },
+      onSearchFn(){
+        if(this.inputValue){
+          this.getUserList(this.inputValue)
+          console.log(this.inputValue)
+        }
+      },
+      right_off_recharge(){}
+    }
+}
+</script>
+<style lang="less">
+.myContainer{
+  background-color: #f7f7f7;
+  .reflectRecode{
+    padding-bottom: 100rpx;
+    .list{
+      display: flex;
+      align-items: center;
+      font-size: 32rpx;
+      color: #333;
+      padding: 28rpx;
+      border-bottom: 1rpx solid #eee;
+      background: #fff;
+      .moneyNumber{ text-align: right;}
+      .moneyNumber.active{ color:#1AAD16; }
+      .titleAndTile{
+        flex: 1;
+        .titme{
+          font-size: 24rpx;
+          color:#999;
+          margin-top: 6rpx;
+        }
+      }
+    }
+    .list:last-child{
+      border-bottom: 0;
+    }
+  }
+  .notice{
+    font-size: 28rpx;
+    color:#999;
+    text-align: center;
+  }
+}
+</style>

@@ -1,0 +1,54 @@
+<template>
+  <view class="myContainer">
+    <import src="../../components/wxParse/wxParse.wxml"/>
+    <view class="wxParse">
+      <template is="wxParse" data="{{wxParseData:article.nodes}}"/>
+    </view>
+  </view>
+</template>
+<script>
+import wepy from 'wepy'
+import tip from '@/utils/tip'
+import WxParse from '../../components/wxParse/wxParse';
+import api from '@/api/api';
+export default class about extends wepy.page {
+  config = {
+      navigationBarTitleText: '关于我们'
+    }
+    data = {
+      hello: 'hello world'
+    }
+    async onLoad(){
+
+      const result = await api.aboutUs({
+        query:{},
+        method:"POST",
+        noloading: true
+      });
+      if(!result.data.code){
+        console.log(result.data.data)
+
+        try {
+        let htmlContent = WxParse.wxParse('article', 'html', result.data.data.info, this, 6)
+          //this.htmlParserTpl = this[this.parserName];
+          this.htmlParserTpl = htmlContent['article']
+          // this.$apply()
+        } catch (e) {
+          console.warn('kinerHtmlParser:', '没有任何内容需要转换', e)
+        }
+      }
+      this.$apply();
+
+      
+    }
+    methods = {
+      
+    }
+}
+</script>
+<style lang="less">
+@import "../../components/wxParse/wxParse.wxss";
+.myContainer{
+  // padding-bottom: 40rpx;
+}
+</style>

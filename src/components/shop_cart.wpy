@@ -1,0 +1,633 @@
+<template name="cart-goods-list">
+  <view class="goodsList">
+    <view class="notice_full_reduction" wx:if="{{couponStr}}">
+      <van-tag class="van-tag" round type="danger">满减</van-tag>
+      <view class="couponTxt">{{couponStr}}</view>
+      <view style="font-size:26rpx;color:red;">去凑单</view>
+      <image src="../assets/images/right.png" style="width:6px;height:22rpx;margin-left:22rpx;"/>
+    </view>
+    <repeat for="{{list}}" key="index" index="index" item="item">
+      <view class="list_box">
+        <swipeDelete :swipeData="item" @delItem.user="handleDelItem">
+          <view class="a-goods-conts {{item.is_checked? 'active':''}}">
+            <view class="goods-info">
+              <icon class="icon_check" type="success" color="{{item.is_checked?'red':'rgb(153,153,153)'}}" @tap.stop="selectTap" data-index="{{index}}" data-id="{{item.id}}" data-quantity="{{item.quantity}}" size="20" />
+              <view class="img-box">
+                <image mode="aspectFill" src="https://api.118zc.com{{item.default_image}}" class="img" />
+              </view>
+              <view class="text-box">
+                <view class="goods-title">
+                  <navigator url="/pages/goodDetail?sourcePage={{item.item_id}}">
+                    {{item.title}}
+                  </navigator>
+                </view>
+                
+                <view class="lable">
+                  <view class="goods-lable" wx:if="{{item.spec_info}}">{{item.spec_info}}</view>
+                  <view class="bo-label" wx:if="{{item.type==2}}">补货</view>
+                </view>
+                <view class="goods-price" wx:if="{{item.sku_id>0}}">¥ {{item.sku_price}}</view>
+                <view class="goods-price" wx:else>¥ {{item.price}}</view>
+
+                <view class="buy-num">
+                  <view class="jian-btn {{item.quantity==1? 'disabled' : ''}}" catchtap="jianBtnTap" data-index="{{index}}" data-id="{{item.id}}">-</view>
+                  <input type="number" value="{{item.quantity}}" disabled/>
+                  <view class="jia-btn {{item.quantity==1000? 'disabled' : ''}}" catchtap="jiaBtnTap" data-index="{{index}}" data-id="{{item.id}}">+</view>
+                </view>
+                
+              </view>
+            </view>
+          </view>
+        </swipeDelete>
+      </view>
+    </repeat>
+  </view>
+  <view class="empty_cart" wx:if="{{list.length==0}}">
+    <image src="../assets/empty_cart.png" class="empty_cart_img"></image>
+    <view class="empty_cart_text">购物车还是空的</view>
+    <view class="shop_btn">
+      <view class="block btn_group">
+        <view class="btn get_store" @tap="goIndex">去逛逛</view>
+      </view>
+    </view>
+  </view>
+  <view class="jiesuan-box" wx:if="{{list.length>0}}">
+
+    <view class="left-price">
+      <view @tap.stop="selectAll" class="all_select_box">
+        <icon type="success" size="20" color="{{allChecked?'red':'rgb(153,153,153)'}}" />
+        <view class="all_select">全选</view>
+      </view>
+
+      <view class="total" hidden="{{noSelect}}">
+        <view wx:if="{{!haveSelect}}">合计：<text class="aaa1">¥0.00</text></view>
+        <view wx:else>
+          <view>合计：<text class="aaa1">¥{{couponPrice}}</text></view>
+          <view class="aaa2"><text>总额:¥{{totalPrice}}</text><text style="margin-left:20rpx;">优惠:¥{{couponMoney}}</text></view>
+        </view>
+      </view>
+
+    </view>
+
+    <view class="to-pay-btn {{haveSelect?'':'no-select'}}" bindtap="toPayOrder">去结算({{haveSelect?myTotal:'0'}})</view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import api from '@/api/api';
+  import tip from '@/utils/tip';
+  import swipeDelete from './wepy-swipe-delete'
+  let USER_SPECICAL_INFO = '系统信息'
+  export default class shopCart extends wepy.component {
+    components = {
+      swipeDelete
+    }
+    data = {
+      list: [
+        {thumLogo:'../assets/shop/shop2.jpg',goodsName:'青皮甜石榴 约1斤 正负0.2斤',goodsSkuValName:'青皮甜石榴',ischecked: true,id:'11233',goodsId:'123456789',type:'1',price:'20000',num:'1'}
+      ],
+      haveSelect: true,
+      noSelect: false,
+      totalPrice: 0.00,
+      couponPrice: 0.00,
+      couponMoney: 0.00,
+      isCouponStr: '',
+      couponStr:'',
+      operating: false,
+      allChecked: true,
+      myTotal:0,
+      no_choose: 0,
+      yes_choose: 0,
+    }
+    sleep (data) {
+      console.log(data)
+      return new Promise((resolve, reject) => {
+        for (var i = 0; i < data.length; i++) {
+          if(data[i].is_checked==0){this.no_choose = this.no_choose + 1}//
+          if(data[i].is_checked==1){this.yes_choose = this.yes_choose + 1}//
+          if(data[i].is_checked==1){
+            this.myTotal = this.myTotal + data[i].quantity
+          }
+        }
+        resolve('promise resolved')
+        this.$apply();
+      })
+    }
+    //获取购物车商品列表
+    async getCartList() { 
+      let openId = wx.getStorageSync('openid');
+      const json = await api.getCartList({
+        query: { token: openId }
+      });
+      if (json.data.code == 0) {
+        let data = json.data.data;
+        this.list = data.list;
+        this.totalPrice = data.totalPrice;
+        this.couponPrice = data.couponPrice;
+        this.couponMoney = data.couponMoney;
+        this.couponStr = data.couponStr;
+        this.isCouponStr = data.isCouponStr;
+
+        let listLength = this.list.length
+        this.no_choose = 0;//重置“没选择”的数量
+        this.yes_choose = 0;//重置“选择”的数量
+        this.myTotal = 0;//重置“去结算”的数量
+        
+        const currentGoodsList = await this.sleep(data.list)
+        console.log("currentGoodsList执行完")
+        console.log(this.no_choose)
+        console.log(this.yes_choose)
+        //先考虑 “全选按钮”
+        if(this.yes_choose==listLength){
+          this.allChecked=true
+          this.haveSelect=true
+        }else if(this.yes_choose>0 && this.yes_choose<listLength){
+          this.allChecked=false
+          this.haveSelect=true
+        }else if(this.yes_choose==0){ 
+          this.allChecked=false
+          this.haveSelect=false
+        }
+
+        //判断勾选的数量
+        // this.myTotal = this.list.length - this.no_choose
+        this.$root.$parent.changeCartNumber()
+
+        this.$apply();
+      } else {
+        tip.error(json.data.msg)
+      }
+      
+    }
+    onLoad() {
+      let that = this;
+      this.operating = false;
+      //that.list = bb.result.products;
+      //console.log(bb.result.products)
+      // that.getCartList();
+    }
+    computed = {}
+    async checkGoods(id, index, ischecked, quantity) {
+      let openId = wx.getStorageSync('openid');
+      const json = await api.updateCart({
+        query: {
+          token: openId,
+          id: id,
+          quantity: quantity,
+          is_checked: ischecked
+        },
+        method:"POST"
+      });
+      if (json.data.code == 0) {
+        // 购物车数据
+        // this.list[index].is_checked = ischecked ? '1' : '0';
+        // tip.toast(json.data.msg)
+        this.operating = false;
+        this.getCartList()
+        // if (this.list[index].is_checked) {
+        //   this.totalPrice += parseInt(this.list[index].priceSubtotal);
+        // } else {
+        //   this.totalPrice -= parseInt(this.list[index].priceSubtotal);
+        // }
+      } else {
+        this.operating = false;
+        tip.error(json.data.msg)
+      }
+      this.$apply();
+    }
+
+    async reduceGoodNum(id, num, index) {
+      let userSpecialInfo = wepy.getStorageSync(USER_SPECICAL_INFO) || {};
+      let openId = userSpecialInfo.openid;
+      const json = await api.cartUpdateNum({
+        query: {
+          openId: openId,
+          id: id,
+          num: num
+        }
+      });
+      if (json.data.code == 0) {
+        // 购物车数据
+        this.list[index].num = num;
+        this.totalPrice = this.totalPrice - this.list[index].price;
+        this.operating = false;
+      } else {
+        tip.error(json.data.msg)
+      }
+      this.$apply();
+    }
+
+    async addGoodNum(id, num, index) {
+      let userSpecialInfo = wepy.getStorageSync(USER_SPECICAL_INFO) || {};
+      let openId = userSpecialInfo.openid;
+      const json = await api.cartUpdateNum({
+        query: {
+          openId: openId,
+          id: id,
+          num: num
+        }
+      });
+      if (json.data.code == 0) {
+        // 购物车数据
+        this.list[index].num = num;
+        this.totalPrice = parseInt(this.totalPrice) + parseInt(this.list[index].price);
+        this.operating = false;
+      } else {
+        tip.error(json.data.msg)
+      }
+      this.$apply();
+    }
+    //删除购物车商品
+    async deleteGoods(itemData) {
+      let that = this
+      var id = itemData.id;
+      let openId = wx.getStorageSync('openid');
+      const json = await api.delCart({
+        query: { token: openId, id: id },
+        method:"POST"
+      });
+      if (json.data.code == 0) {
+        // 购物车数据
+        that.operating = false;
+        that.getCartList()
+        // that.$root.$parent.changeCartNumber()
+      } else {
+        tip.error(json.data.msg)
+      }
+      that.$apply();
+    }
+
+    sleep2 () {
+      return new Promise((resolve, reject) => {
+        this.list.forEach((e,i)=>{
+          console.log(e)
+          this.apiTest(e)
+        })
+        resolve()
+        this.$apply();
+      })
+    }
+    // async apiTest(item){
+    //   if (item.is_checked == (this.allChecked ? '1':'0')) {
+    //     const json = await api.updateCart({
+    //       query: { 
+    //         token: wx.getStorageSync('openid'),
+    //         id: item.id,
+    //         quantity: item.quantity,
+    //         is_checked: this.allChecked ? '0':'1'
+    //       },
+    //       method:"POST",
+    //       noloading: true
+    //     });
+    //     if (json.data.code == 0) { console.log(json.data.msg)} else { tip.error(json.data.msg) }
+    //   }
+    // }
+    apiTest(item) {
+      let that = this
+      return new Promise(function (resolve, reject) {
+        if (item.is_checked == (that.allChecked ? '1':'0')) {
+          // const json = api.updateCart({
+          //   query: { 
+          //     token: wx.getStorageSync('openid'),
+          //     id: item.id,
+          //     quantity: item.quantity,
+          //     is_checked: that.allChecked ? '0':'1'
+          //   },
+          //   method:"POST",
+          //   noloading: true
+          // });
+
+          wx.request({
+            url: 'https://api.118zc.com//order/updateCart', //仅为示例，并非真实的接口地址
+            data: {
+              token: wx.getStorageSync('openid'),
+              id: item.id,
+              quantity: item.quantity,
+              is_checked: that.allChecked ? '0':'1'
+            },
+            method:'POST',
+            header: {
+              'content-type': 'application/x-www-form-urlencoded' // 默认值  application/x-www-form-urlencoded
+            },
+            success: function(res) {
+              console.log(res)
+              resolve('promise resolved')
+            }
+          })
+        }
+        that.$apply();
+      });
+    }
+    //全选 改变状态
+    async checkAllGoods() {
+      let that = this
+      let mapList = that.list.map(i => that.apiTest(i));
+
+      Promise.all(mapList).then(()=> {
+
+        that.getCartList()
+
+      }).catch(function (err) {
+        console.log(err)
+      });
+
+      // const promise = new Promise(function(resolve, reject) {
+      //   that.list.forEach((e,i)=>{
+      //     console.log(e)
+      //     that.apiTest(e)
+      //   })
+      //   resolve()
+      // })
+      // promise.then(function() {
+      //   that.getCartList()
+      // });
+      // this.totalPrice = 0;
+      // this.allChecked = !this.allChecked;
+      that.$apply();
+    }
+
+    methods = {// 初始化函数 相当 onShow
+      getCartListMethod() {
+        this.getCartList();
+      },
+      handleDelItem(itemData) {
+        this.deleteGoods(itemData);
+      },
+      selectTap(e) {
+        var id = e.currentTarget.dataset.id;
+        var index = parseInt(e.currentTarget.dataset.index);
+        var ischecked = this.list[index].is_checked;
+        var quantity = this.list[index].quantity;
+        this.checkGoods(id, index, ischecked?'0':'1', quantity);
+      },
+      selectAll() {
+        this.checkAllGoods();
+      },
+      // 商品的减事件
+      jianBtnTap(e) {
+        if (this.operating) {
+          return;
+        }
+        this.operating = true;
+        var id = e.currentTarget.dataset.id;
+        var index = parseInt(e.currentTarget.dataset.index);
+        var ischecked = this.list[index].is_checked;
+        var num = this.list[index].quantity;
+        // 如果只有1件了，就不允许再减了
+        if (num > 1) {
+          num--;
+        } else {
+          return;
+        }
+        // this.reduceGoodNum(id, num, index);  前端处理
+        //后端处理
+        this.checkGoods(id, index, ischecked?'1':'0', num);
+      },
+      // 商品的加事件
+      jiaBtnTap(e) {
+        if (this.operating) {
+          return;
+        }
+        this.operating = true;
+        var id = e.currentTarget.dataset.id;
+        var index = parseInt(e.currentTarget.dataset.index);
+        var ischecked = this.list[index].is_checked;
+        var num = this.list[index].quantity;
+        // 自增
+        num++;
+        // this.addGoodNum(id, num, index); 前端处理
+        this.checkGoods(id, index, ischecked?'1':'0', num);
+      },
+      // 去结算
+      async toPayOrder() {
+        if(!this.allChecked&& !this.haveSelect){ return }
+        // let result = await api.getExpectedTradeDetail({
+        //   query:{ token:wx.getStorageSync('openid'), item_id:'', coupon_id:'', sku_id:'', quantity:''},
+        // });
+        // if(!result.data.code){
+        //   console.log(result.data.data)
+        //   wx.setStorageSync('confirmData', result.data.data)
+        //   wx.setStorageSync('sku_id', '')
+        // }
+        
+        wepy.navigateTo({url: `./orderConfirm?id=0&sku_id=0&quantity=0`})
+      },
+      goIndex() {
+        wepy.switchTab({
+          url: "/pages/index"
+        })
+      }
+    }
+    events = {}
+  }
+</script>
+
+<style lang="less">
+  @import '../utils/style.less';
+  .swipe-item-wrapper .swipe-content{
+    display:flex;
+    align-items:center;
+  }
+  .goods-info .icon_check{
+    padding:20rpx 10rpx;
+
+  }
+  .goods-info {
+    display: flex;
+    justify-content: space-between;
+    padding: 30rpx 0 30rpx 0rpx;
+    box-sizing: border-box;
+    align-items: center;
+    position: relative;
+    .icon_check {
+      position: absolute;
+      // height: 165rpx;
+      // line-height: 165rpx;
+    }
+    .img-box {
+      width: 168rpx;
+      height: 168rpx;//改
+      overflow: hidden;
+      margin-right: 20rpx;
+      background-color: #d8d8d8;
+      margin-left: 90rpx;
+    }
+    .text-box {
+      width: 450rpx;
+      position: relative;
+    }
+    .text-box .goods-title {
+      font-size: 28rpx;
+      color: #000;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
+      padding: 0rpx 0rpx 5rpx 0;//改
+      display: inline-block;
+      width:450rpx;
+    }
+    .text-box .goods-title navigator{
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
+      display: inline-block;
+      width: 100%;
+    }
+    .text-box .lable {
+      font-size: 20rpx;//改
+      color: #999;
+      height: 80rpx;
+      margin: 8rpx 0 0 0;//改
+    }
+    .lable {
+      display: flex;
+      align-items: flex-start;//改
+      .goods-label {
+        font-size: 26rpx;
+      }
+      .goods-lable {
+        font-size: 26rpx
+      }
+      .bo-label {
+        font-size: 24rpx;
+        background: #e64340;
+        padding: 2rpx 10rpx;
+        color:#fff;
+        border-radius: 2rpx;
+        margin-left: 10rpx;
+
+      }
+    }
+    .text-box .goods-price {
+      font-size: 26rpx;
+      color: #e64340;
+    }
+    .img-box .img {
+      width: 168rpx;
+      height: 168rpx;
+    }
+  }
+  .jiesuan-box {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    height: 100rpx;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    border-bottom: 1px solid #eee;
+    border-top: 1px solid #eee;
+    background-color: #fff;
+    z-index: 9999;
+  }
+  .jiesuan-box .to-pay-btn {
+    width: 240rpx;
+    text-align: center;
+    line-height: 100rpx;
+    background-color: #e64340;
+    font-size: 32rpx;
+    color: #ffffff;
+  }
+  .jiesuan-box .to-pay-btn.no-select {
+    background-color: #ccc;
+  }
+  .jiesuan-box .left-price {
+    display: flex;
+    width: 510rpx;
+    justify-content: space-between;
+    padding: 0 30rpx 0 20rpx;
+    font-size: 28rpx;
+    box-sizing: border-box;
+    align-items: center;
+  }
+  .jiesuan-box .total {
+    flex: 1;
+    font-size: 30rpx;
+    color: #444;
+    text-align: right;
+    .aaa1{
+      color: #e64340;
+    }
+    .aaa2{
+      font-size: 22rpx;
+      color: #666;
+    }
+  }
+  .goodsList{
+    padding-bottom: 104rpx;
+  }
+  .notice_full_reduction{
+    display: flex;
+    align-items: center;
+    height: 72rpx;
+    padding: 0 20rpx 0 10rpx;
+    background: #fff;
+    .couponTxt{
+      flex:1;
+      font-size: 24rpx;
+      color: #666;
+    }
+  }
+  .list_box {
+    height: 250rpx;
+  }
+  .all_select_box {
+    width: 160rpx;
+    height: 100%;
+    display: flex;
+    align-items: center;
+  }
+  .all_select {
+    flex: 1;
+    padding-left: 10rpx;
+  }
+  .empty_cart {
+    padding-top: 100rpx;
+    .shop_btn {
+      display: flex;
+      width: 100%;
+    }
+    .block {
+      margin: 0 auto;
+      text-align: center;
+      display: flex;
+      align-items: center;
+    }
+    .btn_group {
+      display: flex;
+      align-items: center;
+      padding-top: 100rpx;
+      .btn {
+        font-size: 30rpx;
+        padding: 22rpx 90rpx;
+        text-align: center;
+        margin: 0 auto;
+        width: 100%;
+        -moz-border-radius: 10rpx;
+        /* Firefox */
+        -webkit-border-radius: 10rpx;
+        /* Safari 和 Chrome */
+        border-radius: 10rpx;
+        /* Opera 10.5+, 以及使用了IE-CSS3的IE浏览器 */
+      }
+      .get_store {
+        background: #ed601b;
+        color: #fff;
+        margin-left: 1rpx;
+      }
+    }
+  }
+  .empty_cart_img {
+    width: 220rpx;
+    height: 177rpx;
+    display: block;
+    margin: 0 auto;
+  }
+  .empty_cart_text {
+    font-size: 32rpx;
+    color: #999;
+    margin-top: 20rpx;
+    text-align: center;
+  }
+</style>

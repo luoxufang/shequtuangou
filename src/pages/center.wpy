@@ -1,0 +1,658 @@
+<template>
+  <view class="myindexPage myContainer">
+    <!-- <view class="image_box" @tap="replaceFtn"><image class="myReplaceBtn" src="../assets/images/replace.png" alt=""/></view> -->
+    <view class="header">
+      <view class="header_box">
+        <view class="head">
+          <view wx:if="{{avatarImg}}" class="whiteBorder publicStyle1"><image mode="aspectFill" src="{{avatarImg}}"/></view>
+          <view wx:else class="whiteBorder publicStyle1"><image mode="aspectFill" src="{{avatarImg2}}"/></view>
+        </view>
+        <view class="name_bind">
+          <view class="center_view publicStyle1">
+            <view wx:if="{{userName}}" style="font-size:42rpx;color:#fff;">{{userName}}</view>
+            <view wx:else style="font-size:42rpx;color:#fff;">{{userName2}}</view>
+            <!-- <view style="font-size:24rpx;color:#fff;">更多设置</view> -->
+            <!-- <button open-type="getUserInfo" type="primary" lang="zh_CN" bindgetuserinfo="bindGetUserInfo">更新资料</button> -->
+            <button open-type="getUserInfo" type="primary" lang="zh_CN">我的积分: {{myInfoData.point.point_count}}</button>
+          </view>
+        </view>
+      </view>
+      <view class="color_box">
+        <view class="radius_box"></view>
+      </view>
+    </view>
+    <!-- 余额、积分等 -->
+    <view class="all_order_box" style="padding:38rpx;" wx:if="{{showVipUsers}}">
+      <!-- <view class="moneyBox">
+        <view class="childDiv" @tap="go_to_balance">
+          <view style="text-align:center;">
+            <view class="money"><span style="font-size:26rpx;">￥</span>{{myInfoData.deposit.deposit}}</view>
+            <view class="title">余额</view>
+          </view>
+        </view>
+        <view class="childDiv" @tap="go_to_couponChoose">
+          <view style="text-align:center;">
+            <view class="money">{{myInfoData.coupon_num}}</view>
+            <view class="title">优惠券</view>
+          </view>
+        </view>
+        <view class="childDiv">
+          <view style="text-align:center;">
+            <view class="money">{{myInfoData.point.point_count}}</view>
+            <view class="title">积分</view>
+          </view>
+        </view>
+      </view> -->
+
+      <view class="moneyBox class">
+        <view class="childDiv">
+          <view style="text-align:center;">
+            <view class="money"><span style="font-size:26rpx;">￥</span>{{vipInfoData.commission_amount}}</view>
+            <view class="title">今日提成</view>
+          </view>
+        </view>
+        <view class="childDiv">
+          <view style="text-align:center;">
+            <view class="money">{{vipInfoData.trade_num}}</view>
+            <view class="title">今日订单数</view>
+          </view>
+        </view>
+        <view class="childDiv">
+          <view style="text-align:center;">
+            <view class="money">{{vipInfoData.amount}}</view>
+            <view class="title">今日销售额</view>
+          </view>
+        </view>
+        <view class="childDiv" @tap="go_to_pkPage">
+          <view style="text-align:center;">
+            <view class="money">{{vipInfoData.rank}}</view>
+            <view class="title">排名</view>
+          </view>
+        </view>
+      </view>
+    </view>
+    <!-- 全部订单 -->
+    <view class="all_order_box">
+      <view class="my_order">
+        <view class="click_right" @tap="goToShop('0')">
+          <view class="aaa"><span style="font-weight: 400;">全部订单</span>
+            <view class="bbb">全部订单<image src="../assets/images/right.png" style="width:14rpx;height:24rpx;margin-left:22rpx;"/></view>
+          </view>
+        </view>
+        <view class="goods_stadu">
+          <view class="goods_stadu_list" @tap="goToShop('1')" data-id="1">
+            <view class="num_box">
+              <view class="notice_img_box">
+                <view class="num" wx:if="{{myInfoData.trade.pending_payment > 0}}">{{myInfoData.trade.pending_payment}}</view>
+                <image src="../assets/images/us_pay@3x.png" style="width:46rpx;height:40rpx;"/>
+              </view>
+              <view class="text">待付款</view>
+            </view>
+          </view>
+          <view class="goods_stadu_list" @tap="goToShop('2')">
+            <view class="num_box">
+              <view class="notice_img_box">
+                <view class="num" wx:if="{{myInfoData.trade.pending_delivery > 0}}">{{myInfoData.trade.pending_delivery}}</view>
+                <image src="../assets/images/us_delivery@3x.png" style="width:46rpx;height:40rpx;"/>
+              </view>
+              <view class="text">待配送</view>
+            </view>
+          </view>
+          <view class="goods_stadu_list" @tap="goToShop('3')">
+            <view class="num_box">
+              <view class="notice_img_box">
+                <view class="num" wx:if="{{myInfoData.trade.in_distribution > 0}}">{{myInfoData.trade.in_distribution}}</view>
+                <image src="../assets/images/us_comment@3x.png" style="width:40rpx;height:40rpx;"/>
+              </view>
+              <view class="text">配送中</view>
+            </view>
+          </view>
+          <view class="goods_stadu_list" @tap="goToShop('4')">
+            <view class="num_box">
+              <view class="notice_img_box">
+                <view class="num" wx:if="{{three_num > 0}}">{{three_num}}</view>
+                <image src="../assets/images/us_Receive@3x.png" style="width:46rpx;height:40rpx;"/>
+              </view>
+              <view class="text">已完成</view>
+            </view>
+          </view>
+          <view class="goods_stadu_list" @tap="go_to_afterSale">
+            <view class="num_box">
+              <view class="notice_img_box">
+                <view class="num" wx:if="{{three_num > 0}}">{{three_num}}</view>
+                <image src="../assets/images/us_service@3x.png" style="width:40rpx;height:40rpx;"/>
+              </view>
+              <view class="text">售后退换</view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+    <!-- 普通用户-我的服务 -->
+    <view class="all_order_box" wx:if="{{showOrdinaryUsers}}" style="margin-top:20rpx;margin-bottom: 24rpx;">
+      <view class="my_order">
+        <view class="click_right">
+          <view class="aaa"><span style="font-weight: 400;">我的服务</span></view>
+        </view>
+        <view class="goods_stadu2">
+          <view class="goods_stadu_list" @tap="go_to_balance">
+            <view class="contDiv">
+              <image src="../assets/images/center1.png"/>
+              <view class="text">我的余额</view>
+            </view>
+          </view>
+          <view class="goods_stadu_list" @tap="go_to_couponChoose">
+            <view class="contDiv">
+              <image src="../assets/images/coupon2.png"/>
+              <view class="text">我的优惠券</view>
+            </view>
+          </view>
+          <view class="goods_stadu_list" @tap="go_to_couponChoose(1)">
+            <view class="contDiv">
+              <image src="../assets/images/coupon1.png"/>
+              <view class="text">领券中心</view>
+            </view>
+          </view>
+          <view class="goods_stadu_list" @tap="go_to_recruit">
+            <view class="contDiv">
+              <image src="../assets/images/center4.png"/>
+              <view class="text">团长招募</view>
+            </view>
+          </view>
+          <view class="goods_stadu_list" @tap="go_to_supplier">
+            <view class="contDiv">
+              <image src="../assets/images/i3.png"/>
+              <view class="text">供应商招募</view>
+            </view>
+          </view>
+          <!-- userAgreementPolicy -->
+          <view class="goods_stadu_list" @tap="go_to_xieyi">
+            <view class="contDiv">
+              <image src="../assets/images/i3.png"/>
+              <view class="text">用户协议政策</view>
+            </view>
+          </view>
+          <view wx:if="{{myInfoData.delivery_info.flag}}" class="goods_stadu_list" @tap="go_to_delivery">
+            <view class="contDiv">
+              <image src="../assets/images/center3.png"/>
+              <view class="text">配送核对</view>
+            </view>
+          </view>
+          <view class="goods_stadu_list">
+            <view class="contDiv">
+              <button open-type="contact">
+                <image src="../assets/images/center6.png"/>
+                <view class="text">联系客服</view>
+              </button>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+    <!-- 团长-我的服务 -->
+    <view class="all_order_box" wx:if="{{showVipUsers}}" style="margin-top:20rpx;">
+      <view class="my_order">
+        <view class="click_right">
+          <view class="aaa"><span style="font-weight: 400;">我的服务</span></view>
+        </view>
+
+        <view class="goods_stadu2">
+          <view class="goods_stadu_list" @tap="go_to_balance">
+            <view class="contDiv">
+              <image src="../assets/images/center1.png"/>
+              <view class="text">我的余额</view>
+            </view>
+          </view>
+          <view class="goods_stadu_list" @tap="go_to_couponChoose">
+            <view class="contDiv">
+              <image src="../assets/images/coupon2.png"/>
+              <view class="text">我的优惠券</view>
+            </view>
+          </view>
+          <view class="goods_stadu_list" @tap="go_to_couponChoose(3)">
+            <view class="contDiv">
+              <image src="../assets/images/coupon1.png"/>
+              <view class="text">领券中心</view>
+            </view>
+          </view>
+          <view class="goods_stadu_list" @tap="go_to_orderManage">
+            <view class="contDiv">
+              <image src="../assets/images/center4.png"/>
+              <view class="text">团队订单</view>
+            </view>
+          </view>
+          <view class="goods_stadu_list" @tap="go_to_moneyCount">
+            <view class="contDiv">
+              <image src="../assets/images/i3.png"/>
+              <view class="text">佣金记录</view>
+            </view>
+          </view>
+          <view class="goods_stadu_list" @tap="go_to_memberList">
+            <view class="contDiv">
+              <image src="../assets/images/i9.png"/>
+              <view class="text">旗下会员</view>
+            </view>
+          </view>
+          <!-- <view class="goods_stadu_list">
+            <view class="contDiv">
+              <image src="../assets/images/center5.png"/>
+              <view class="text">佣金记录</view>
+            </view>
+          </view> -->
+          <view class="goods_stadu_list" @tap="go_to_pkPage">
+            <view class="contDiv">
+              <image src="../assets/images/center2.png"/>
+              <view class="text">业绩比拼</view>
+            </view>
+          </view>
+          <view wx:if="{{myInfoData.delivery_info.flag}}" class="goods_stadu_list" @tap="go_to_delivery">
+            <view class="contDiv">
+              <image src="../assets/images/i10.png"/>
+              <view class="text">配送核对</view>
+            </view>
+          </view>
+          <view class="goods_stadu_list" @tap="go_to_xieyi">
+            <view class="contDiv">
+              <image src="../assets/images/center5.png"/>
+              <view class="text">用户协议政策</view>
+            </view>
+          </view>
+          <view class="goods_stadu_list">
+            <view class="contDiv">
+              <button open-type="contact">
+                <image src="../assets/images/center6.png"/>
+                <view class="text">联系客服</view>
+              </button>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import tip from '@/utils/tip'
+  import api from '@/api/api';
+  export default class Center extends wepy.page {
+    config = {
+      navigationBarTitleText: '我的',
+      navigationBarBackgroundColor: "#d91f54",
+      navigationBarTextStyle: "white"
+    }
+    data = {
+      myInfoData: {},
+      three_num:'',
+      avatarImg:'https://api.118zc.com/uploads/20190419/20190419164858_5cb98b7a7e365.jpg',
+      userName:'小二',
+      avatarImg2:'https://api.118zc.com/uploads/20190419/20190419164858_5cb98b7a7e365.jpg',
+      userName2:'请登录',
+      showOrdinaryUsers: false,
+      showVipUsers: false,
+      vipInfoData:{
+        commission_amount:'50',
+        trade_num:'15',
+        amount:'200',
+        rank:'1',
+      },
+    }
+    onShow(){
+      //获取用户信息
+      this.getUserInfo()
+    }
+    onLoad(){
+      let userInfo = wx.getStorageSync('USER_INFO')
+      this.userName = userInfo.nickName
+      this.avatarImg = userInfo.avatarUrl
+      this.initSystemInfo()
+    }
+    methods = {
+      replaceFtn(type){
+        if(this.showOrdinaryUsers){
+          this.showOrdinaryUsers = false;
+          this.showVipUsers = true;
+          tip.toast('切换为团长')
+        }else{
+          this.showOrdinaryUsers = true;
+          this.showVipUsers = false;
+          tip.toast('切换为普通用户')
+        }
+      },
+      parentFn (num, evt) {
+        console.log('parent received emit event, number is: ' + num)
+        console.log(evt)
+      },
+      goToShop(id){
+        if(id==5){
+          tip.alert('售后页面还没写')
+          return
+        }
+        wx.navigateTo({
+          url: "./myOrder?id=" + id
+        });
+      },
+      go_to_balance(){
+        this.$navigate(`./balance?deposit=${this.myInfoData.deposit.deposit}&freeze_deposit=${this.myInfoData.deposit.freeze_deposit}&use_deposit=${this.myInfoData.deposit.use_deposit}`);
+      },
+      go_to_couponChoose(type){
+        if(type==3){
+          this.$navigate(`../page2/pages/coupon?type=`+type);
+        }else{
+          this.$navigate(`../page2/pages/coupon`);
+        }
+      },
+      go_to_supplier(){
+        this.$navigate(`./supplier`);
+      },
+      go_to_recruit(){
+        this.$navigate(`./recruit`);
+      },
+      go_to_xieyi(){
+        this.$navigate(`../page2/pages/xieyi`);
+      },
+      go_to_moneyCount(){
+        this.$navigate(`../page2/pages/moneyCount`);
+      },
+      go_to_delivery(){
+        let data = JSON.stringify(this.myInfoData.delivery_info.delivery_team)
+        this.$navigate(`../page2/pages/deliveryList?data=${data}`);
+      },
+      go_to_memberList(){
+        this.$navigate(`../page2/pages/memberList`);
+      },
+      go_to_pkPage(){
+        this.$navigate(`../page2/pages/pkPage`);
+      },
+      go_to_orderManage(){
+        this.$navigate(`../page2/pages/orderManage`);
+      },
+      goToallOrders(stadus){
+        this.$navigate('./allOrders?stadus='+`${stadus}`);
+      },
+      go_to_afterSale(){
+        this.$navigate(`../page2/pages/afterSale`);
+      }
+    }
+    async getUserInfo(){
+      const result = await api.getUserInfo({
+        query:{ token : wx.getStorageSync('openid') },
+        method:"POST",
+        noloading: true
+      });
+      if(!result.data.code){
+        this.myInfoData = result.data.data
+        if(result.data.data.team_info!==null){
+          this.showVipUsers =true
+          this.showOrdinaryUsers = false
+          this.getNowRanksInfo()
+        }else{
+          this.showVipUsers =false
+          this.showOrdinaryUsers = true
+        }
+      }else{
+        tip.alert(result.data.msg)
+      }
+      this.$apply();
+    }
+    async getNowRanksInfo(){
+      const result = await api.getNowRanksInfo({
+        query:{ token : wx.getStorageSync('openid') },
+        method:"POST",
+        noloading: true
+      });
+      if(!result.data.code){
+        this.vipInfoData = result.data.data
+      }
+      this.$apply();
+    }
+    bindGetUserInfo(e) {
+      console.log(e.detail.userInfo); //头像、昵称等
+      tip.loading('更新中')
+      setTimeout(() => {
+        tip.loaded()
+        tip.toast('更新完毕')
+      }, 1000);
+    }
+    initSystemInfo () {
+      let that = this
+      wx.getSystemInfo({
+        success (res) {
+          that.winHeight = res.windowHeight
+          console.log(res.windowWidth)
+        }
+      });
+    }
+  }
+</script>
+<style lang="less">
+.myindexPage{}
+.myContainer{
+  // height: 100%;
+  box-sizing: border-box;
+  .image_box{
+    border-radius: 50%;
+    overflow: hidden;
+    position: fixed;
+    top: 30rpx;
+    right: 60rpx;
+    z-index: 1000;
+    .myReplaceBtn{
+      width: 100rpx;
+      height: 100rpx;
+    }
+  }
+}
+.publicStyle1 {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  overflow: hidden;
+  -webkit-transition-property: -webkit-transform, opacity;
+  transition-property: transform, opacity;
+  transform: translate(-50%, -50%);
+}
+
+.header{
+  background-color: #d91f54;
+  background: -moz-linear-gradient(top, #d91f54 0%, #fe4f63 100%);
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#d91f54), color-stop(100%,#fe4f63));
+  background: -webkit-linear-gradient(top, #d91f54 0%,#fe4f63 100%);
+  background: -o-linear-gradient(top, #d91f54 0%,#fe4f63 100%);
+  background: -ms-linear-gradient(top, #d91f54 0%,#fe4f63 100%);
+  background: linear-gradient(to bottom, #d91f54 0%,#fe4f63 100%);
+  // position: fixed;
+  // top: 0;
+  // left: 0;
+  width: 100%;
+}
+.header_box {
+  display: flex;
+  padding: 20rpx;
+  // background-color: #d91f54;
+  min-height:130rpx;
+  .head {
+    flex: 2;
+    position: relative;
+    font-size: 0;
+    .whiteBorder{
+      width: 140rpx;
+      height: 140rpx;
+      border: 4rpx solid #fff;
+      border-radius: 50%;
+    }
+    image {
+      width: 140rpx;
+      height: 140rpx;
+    }
+    .absolute_img{
+      width: 36rpx;
+      height: 36rpx;
+      position: absolute;
+      right: 28rpx;
+      bottom: 0;
+      z-index: 1000;
+    }
+  }
+  .name_bind {
+    flex: 5;
+    padding-left: 12rpx;
+    position: relative;
+    .center_view{
+      width: 100%;
+    }
+  }
+}
+.color_box {
+  width: 100%;
+  height: 120rpx;
+  overflow: hidden;
+  position: relative;
+}
+/*我的订单  */
+.all_order_box{
+  margin: 20rpx 28rpx 0 28rpx;
+  position: relative;
+  top: -88rpx;
+  background-color: #FFF;
+  border-radius: 14rpx;
+  box-shadow: 0 0 2rpx 2rpx #eee;
+  .moneyBox{
+    display: flex;
+    flex-wrap:wrap;
+    .childDiv{
+      width: 33.33%;
+      height: 46rpx;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-right: 1rpx solid #eee;
+      box-sizing: border-box;
+      .money{ font-size: 30rpx;font-weight: bold; color: #333; }
+      .title{ font-size: 24rpx;color: #666; }
+    }
+    .childDiv:last-child{
+      border-right:0;
+    }
+  }
+  .moneyBox.class {
+    .childDiv{
+      width: 25%;
+    }
+  }
+}
+.my_order{
+  width: 100%;
+  .goods_stadu2{
+    display: flex;
+    flex-wrap:wrap;
+    width: 100%;
+    .goods_stadu_list{
+      width: 33.33%;
+      padding-bottom: 40rpx;
+      .contDiv{
+        text-align:center;
+        image{ width:60rpx;height: 60rpx;}
+        .text{ font-size: 26rpx;color:#666;margin-top:10rpx; }
+      }
+    }
+  }
+}
+.my_order .click_right:last-child .aaa{
+  border-bottom:2rpx solid #fff;
+}
+.click_right{
+    padding-left: 24rpx;
+}
+.click_right .aaa{
+  display: flex;
+  height: 100%;
+  padding-right: 24rpx;
+  line-height: 100rpx;
+  position: relative;
+  font-size: 30rpx;
+  color: rgb(34, 34, 34);
+  .left_img{
+    margin-right:16rpx;
+    display: flex;
+    align-items:center;
+    justify-content:center;
+  }
+}
+.num_box{
+  position: relative;
+  padding-bottom: 48rpx;
+  padding-top: 18rpx;
+  .notice_img_box{
+    width: 40rpx;
+    height: 40rpx;
+    margin: 0 auto;
+    position: relative;
+  }
+  .text{
+    font-size: 26rpx;
+    color: #666;
+    padding-top: 20rpx;
+  }
+}
+.num_box .num{
+  position: absolute;
+  top: -12rpx;
+  right: -20rpx;
+  z-index: 100;
+  width: 28rpx;
+  height: 28rpx;
+  line-height: 28rpx;
+  text-align: center;
+  border-radius: 50%;
+  border: 2rpx solid #ff3939;
+  background-color: #FFF;
+  color: #ff3939;
+  font-size: 18rpx;
+}
+.click_right .bbb{
+  display: flex;
+  align-items:center;
+  justify-content:center;
+  height: 100%;
+  line-height: 100rpx;
+  position: absolute;
+  top: 0;
+  right: 24rpx;
+  color: rgb(153, 153, 153);
+  font-size: 26rpx;
+}
+.goods_stadu{
+  width: 100%;
+  display: flex;
+  .goods_stadu_list{
+    float: left;
+    flex: 1;
+    text-align: center;
+    position: relative;
+  }
+}
+.center_view>button{
+  width:200rpx;
+  height:68rpx;
+  line-height: 68rpx;
+  font-size:24rpx;
+  margin-left: inherit;
+  padding-left: 0;
+  text-align: left;
+  background: transparent !important;
+}
+.contDiv>button{
+  width: 100%;
+  // display: flex;
+  padding-right: 0;
+  background: transparent !important;
+  font-size: 26rpx;
+  padding-left: 0;
+  line-height:inherit;
+}
+button::after{
+  border: 0;
+}
+</style>

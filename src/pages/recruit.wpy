@@ -1,0 +1,173 @@
+<template>
+  <view class="myContainer">
+    <view class="headerView">
+      <view class="text1">欢迎加入我们</view>
+      <view class="text2">成为团长</view>
+    </view>
+    <view class="commonMadule">
+      <view class="tuanzhangQuanyi">
+        <view class="title">团长权益</view>
+        <view class="imgAndTextBox">
+          <view class="imgAndText">
+            <image style="width:124rpx;height:124rpx;" src="../assets/111.png"/>
+            <view class="tel">0成本开店</view>
+            <view class="conttt">不用囤货，不用投资，0成本拼家乐帮您开设群店</view>
+          </view>
+          <view class="imgAndText">
+            <image style="width:124rpx;height:124rpx;" src="../assets/111.png"/>
+            <view class="tel">0学费学习社群运营</view>
+            <view class="conttt">文案图片专业支持，传授社群运营经验</view>
+          </view>
+          <view class="imgAndText">
+            <image style="width:124rpx;height:124rpx;" src="../assets/111.png"/>
+            <view class="tel">稳定收入</view>
+            <view class="conttt">团长佣金月收入在：3000~10000</view>
+          </view>
+          <view class="imgAndText">
+            <image style="width:124rpx;height:124rpx;" src="../assets/111.png"/>
+            <view class="tel">拓展人脉</view>
+            <view class="conttt">平台补贴帮您拉人，提货客流络绎不绝</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="commonMadule class2">
+      <view class="tuanzhangQuanyi">
+        <view class="title">申请流程</view>
+        <view class="applyFlow">
+          <view class="jiantou">
+            <view><image class="img" src="../assets/images/us_service@3x.png"/></view>
+            <view><image class="img2" src="../assets/right2.png"/></view>
+            <view><image class="img" src="../assets/images/us_service@3x.png"/></view>
+            <view><image class="img2" src="../assets/right2.png"/></view>
+            <view><image class="img" src="../assets/images/us_service@3x.png"/></view>
+          </view>
+        </view>
+        <view class="applyNotice">
+          <view class="abc">提交申请资料</view>
+          <view class="abc">等待对应城市的负责人联系详谈合作细节</view>
+          <view class="abc">申请通过正式成为拼家乐团长</view>
+        </view>
+      </view>
+    </view>
+    <button @tap="applyTuan">申请成为团长</button>
+  </view>
+</template>
+<script>
+import wepy from 'wepy'
+export default class recruit extends wepy.page {
+  config = {
+      navigationBarTitleText: '团长招募'
+    }
+    data = {
+      hello: 'hello world'
+    }
+    onLoad(){}
+    methods = {
+      applyTuan(){
+        this.$navigate(`./applyTuan`);
+      }
+    }
+}
+</script>
+<style lang="less">
+.myContainer{
+  padding-bottom: 60rpx;
+  .headerView{
+    padding-left: 56rpx;
+    padding-top: 50rpx;
+    height: 300rpx;
+    background-image: url("https://api.118zc.com/uploads/20190320/20190320205510_5c92382e3cf33.jpg");
+    background-repeat:no-repeat; 
+    background-size:100% 100%;
+    -moz-background-size:100% 100%;
+    .text1,.text2 {
+      color: #fff;
+      font-size: 48rpx;
+      font-weight: 700;
+    }
+  }
+  .commonMadule{
+    padding: 24rpx;
+    position: relative;
+    top: -68rpx;
+  }
+  .tuanzhangQuanyi{
+    background-color: #fff;
+    border-radius: 14rpx;
+    .title{
+      font-size: 34rpx;
+      color: aqua;
+      font-weight: 700;
+      line-height: 100rpx;
+      text-align: center;
+    }
+    .imgAndTextBox{
+      display: flex;
+      flex-wrap:wrap;
+      padding: 20rpx;
+      text-align: center;
+      .imgAndText{
+        width: 50%;
+        // display: flex;
+        // align-items:center;
+        // justify-content:center;
+        .tel{
+          padding:10rpx 24rpx;
+          padding-top: 28rpx;
+          color: #333;
+          font-size: 30rpx;
+          font-weight: 600;
+        }
+        .conttt{
+          padding:10rpx 24rpx;
+          color: #999;
+          font-size: 24rpx;
+        }
+      }
+    }
+    .applyFlow{
+      display: flex;
+      align-items:center;
+      padding: 0 28rpx;
+      view{
+        width: 20%;
+        display: flex;
+        align-items:center;
+        justify-content:center;
+      }
+      .jiantou{
+        width: 100%;
+        .img{ width: 70rpx;height: 70rpx; }
+        .img2{ width: 50rpx;height: 50rpx;}
+      }
+    }
+    .applyNotice{
+      display: flex;
+      padding-bottom: 30rpx;
+      .abc{
+        width: 33.33%;
+        padding: 20rpx;
+        box-sizing: border-box;
+        font-size: 24rpx;
+        color: #666;
+        text-align: center;
+      }
+    }
+  }
+}
+button{
+  margin:0 58rpx;
+  height:70rpx;
+  text-align: center;
+  border-radius: 40rpx;
+  color: #fff;
+  line-height: 70rpx;
+  font-size:28rpx;
+  background: #fd1350 !important;
+}
+button::after{
+  border: 0;
+}
+</style>

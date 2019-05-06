@@ -1,0 +1,131 @@
+<template>
+  <view class="commonView">
+    <!-- 蒙版和授权用户信息 -->
+    <view class="goods-buy-panel-cover" catchtouchmove="myCatchTouch" wx:if="{{display}}"></view>
+    <view class="btn_authorize" catchtouchmove="myCatchTouch" wx:if="{{authorize}}">
+      <view class="Title">终于等到您</view>
+      <view class="cont">为了完整体验全民社区团，获取更多优惠,我们需要您的授权。(授权仅用于用户识别，用户昵称和头像)</view>
+      <button open-type="getUserInfo" type="primary" lang="zh_CN" bindgetuserinfo="onGotUserInfo">确认授权</button>
+    </view>
+  </view>
+</template>
+<script>
+import wepy from 'wepy'
+import api from '@/api/api'
+import tip from '@/utils/tip'
+export default class authorize extends wepy.page {
+  config = {
+    navigationBarTitleText: '全民社区团'
+  }
+  data = {
+    display: false,
+    authorize: false,
+  }
+  onShow(){
+    this.checkAuthorize()
+  }
+  onLoad(options){}
+  // 可以通过 wx.getSetting 先查询一下用户是否授权了 "scope.userInfo" 这个 scope
+  checkAuthorize(){
+    let that = this
+    wx.getSetting({
+      success(res) {
+        console.log(res.authSetting)
+        //就获用户信息授权
+        if (!res.authSetting['scope.userInfo']) {
+          that.display = true
+          that.authorize = true
+          that.$apply()
+        }else{
+          console.log('已经授权过用户信息')
+        }
+        //就获取地理定位授权
+        if(!res.authSetting['scope.userLocation']){
+          wx.getLocation({
+            type: 'gcj02',
+            success(res) {
+              var latitude = res.latitude
+              var longitude = res.longitude
+              console.log(res.latitude,res.longitude)
+            },
+            fail(){
+              // wx.redirectTo({ url: "./showHome" });
+            }
+          })
+        }else{
+          console.log('已经授权过用户地理位置')
+        }
+      }
+    })
+
+  }
+  //按钮授权登录
+  async onGotUserInfo(e){
+    console.log('授权结果：'+e.detail.errMsg)
+    if (e.detail.errMsg == 'getUserInfo:ok') {
+      let res = await wepy.login(); //调用login API 获取code
+      if (res.code) {
+        wepy.setStorageSync('USER_INFO', e.detail.userInfo); //本地保存用户信息 *
+
+        let rlt = await api.wxJsCode2Session({
+          query: {code: res.code},
+          method:'post'
+        });
+        if (rlt.data.data.token) {
+          wepy.setStorageSync('openid', rlt.data.data.token);//本地保存用户openid *
+          wx.redirectTo({ url: "./showHome" });
+          let result = await api.saveUserInfo({//后台保存用户信息
+            query: Object.assign(e.detail.userInfo,{token:rlt.data.data.token}),
+            method:'post'
+          });
+          if(!result.code){console.log('用户信息保存成功')}
+        } else {
+          let res = await wepy.showModal({
+            title: 'apenid获取有误',
+            content: '授权失败/重新授权'
+          });
+          if (res.confirm) {}
+        }
+      }
+    }else{
+      tip.alert('用户信息获取失败')
+    }
+  }
+}
+</script>
+<style lang="less" scoped>
+/*遮罩层*/
+.goods-buy-panel-cover{
+  width: 100%;
+  height: 100%;
+  position: fixed;
+  top: 0;
+  background-color: black;
+  -webkit-filter:opacity(.5);
+  z-index: 100;
+}
+.btn_authorize{
+  width: 68%;
+  height: 308rpx;
+  padding: 30rpx;
+  border-radius: 18rpx;
+  position: fixed;
+  z-index: 200;
+  top: 50%;
+  left: 50%;
+  overflow: hidden;
+  background-color: #fff;
+  -webkit-transition-property: -webkit-transform,opacity;
+  transition-property: transform,opacity;
+  transform: translate(-50%, -50%);
+  .Title{
+    font-size:34rpx;color:#333;text-align:center;margin-bottom:20rpx;margin-top:10rpx;
+  }
+  button{
+    font-size:30rpx;margin:0 24rpx;background:#e64340;border-radius: 18rpx;
+  }
+  .cont{
+    margin-bottom:40rpx;font-size:26rpx;color:#666;padding:0 20rpx;text-align:justify;
+  }
+}
+</style>

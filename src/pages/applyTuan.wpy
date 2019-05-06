@@ -1,0 +1,224 @@
+<template>
+  <view class="myContainer">
+    <form bindsubmit="formSubmit" bindreset="formReset">
+    <view class="headerView">
+      <view class="text1">申请团长身份</view>
+      <view class="text2">需要您填写真实姓名并验证手机</view>
+    </view>
+    <view class="commonMadule">
+      <view class="tuanzhangQuanyi">
+        <view class="inputBox">
+          <view class="inputname">选择地址</view>
+          <picker style="flex: 1;height:100rpx;" mode="region" bindchange="bindRegionChange" value="">
+            <input disabled='true' name="address" style="height:100rpx" value="{{showAddress}}" maxlength="" placeholder="请选择地区" placeholder-style="{{commonStyle}}"/>
+          </picker>
+        </view>
+        <view class="inputBox"><view class="inputname">小区名称</view><input name="homeName" class="input" placeholder="请输入小区名称" placeholder-style="{{commonStyle}}"/></view>
+        <view class="inputBox">
+          <view class="inputname">手机号</view>
+          <input name="phone" bindinput="phoneChange" class="input" placeholder="请输入手机号" placeholder-style="{{commonStyle}}"/>
+        </view>
+        <view class="inputBox">
+          <view class="inputname">验证码</view>
+          <input name="codeIs" class="input" placeholder="验证码" placeholder-style="{{commonStyle}}"/>
+          <view class="codeBox {{changeColor ? 'changeColor': ''}}" @tap="getValidCode">
+            <view class="childBox">{{count!=60? '重新获取('+count+'s)':'获取验证码'}}</view>
+          </view>
+        </view>
+        <view class="inputBox">
+          <view class="inputname">姓名</view>
+          <input name="name" class="input" placeholder="请输入姓名" placeholder-style="{{commonStyle}}"/>
+        </view>
+      </view>
+    </view>
+
+    <button formType="submit">提交申请</button>
+    </form>
+  </view>
+</template>
+<script>
+import wepy from 'wepy'
+import tip from '@/utils/tip'
+import api from '@/api/api';
+export default class applyTuan extends wepy.page {
+  config = {
+    navigationBarTitleText: '团长申请'
+  }
+  data = {
+    phoneNumber:'',
+    count: 60,
+    changeColor: false,
+    hello: 'hello world',
+    showAddress:'',
+    commonStyle:'font-size:28rpx;color:#666;opacity: 0.6;',
+    keys:'',
+    regions:[]
+  }
+  onLoad(){}
+  methods = {
+    phoneChange(event){
+      this.phoneNumber = event.detail.value
+    },
+    async formSubmit(e){
+      console.log(e)
+      var RegExp = /^((0\d{2,3}-\d{7,8})|(1[3584]\d{9}))$/;
+      if(!e.detail.value.address){
+        tip.toast('请选择地址')
+      }else if(!e.detail.value.homeName){
+        tip.toast('请输入小区名称')
+      }else if (!this.phoneNumber || !RegExp.test(this.phoneNumber)) {
+        tip.toast('请正确输入号码')
+      }else if(!e.detail.value.codeIs){
+        tip.toast('请输入验证码')
+      }else if(!e.detail.value.name){
+        tip.toast('请输入姓名')
+      }else{
+        const data = await api.applyTeam({
+          query:{
+            province:this.regions[0],
+            city:this.regions[1],
+            area:this.regions[2],
+            community:e.detail.value.homeName,
+            mobile:e.detail.value.phone,
+            realname:e.detail.value.name,
+            keys:this.keys,
+            code:e.detail.value.codeIs,
+            token: wx.getStorageSync('openid')
+          },
+          method:'post'
+        });
+        if(data.data.code==500){
+          tip.toast(data.data.msg)
+          setTimeout(()=>{
+            wx.navigateBack({
+              delta: 1
+            })
+          },1000)
+          
+        }else{
+          tip.toast(data.data.msg)
+        }
+      }
+    },
+    bindRegionChange (e) {
+      console.log('picker发送选择改变，携带值为', e.detail.value)
+      var regions = e.detail.value;
+      this.regions = e.detail.value
+      this.showAddress = regions.join('-')
+      console.log(this.showAddress)
+    },
+    getValidCode: function() {
+      var RegExp = /^((0\d{2,3}-\d{7,8})|(1[3584]\d{9}))$/;
+      if (!this.phoneNumber || !RegExp.test(this.phoneNumber)) {
+        tip.toast('请正确填写号码')
+      } else {
+        if (this.count == 60) {
+          this.tick();
+          this.send_message();
+          this.changeColor = true;
+        }
+      }
+    }
+  }
+  //发送验证码
+  async send_message() {
+    const data = await api.sendMobileCode({
+      query:{ mobile:this.phoneNumber },
+      method:'post'
+    });
+    if(data.data.code==0){
+      tip.toast('发送成功，请注意查收')
+      this.keys = data.data.data.keys
+    }
+    this.$apply();
+  }
+  tick() {
+    var vm = this;
+    if (vm.count > 0) {
+      var count = vm.count - 1;
+      vm.count = count;
+      setTimeout(function() {
+        return vm.tick();
+      }, 1000);
+    } else {
+      (vm.count = 60), (vm.changeColor = false);
+    }
+    vm.$apply();
+  }
+}
+</script>
+<style lang="less">
+.myContainer{
+  .headerView{
+    padding-left: 56rpx;
+    padding-top: 50rpx;
+    background-color: #d91f54;
+    background: -moz-linear-gradient(top, #d91f54 0%, #fe4f63 100%);
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#d91f54), color-stop(100%,#fe4f63));
+    background: -webkit-linear-gradient(top, #d91f54 0%,#fe4f63 100%);
+    background: -o-linear-gradient(top, #d91f54 0%,#fe4f63 100%);
+    background: -ms-linear-gradient(top, #d91f54 0%,#fe4f63 100%);
+    background: linear-gradient(to bottom, #d91f54 0%,#fe4f63 100%);
+    height: 240rpx;
+    .text1 {
+      color: #fff;
+      font-size: 54rpx;
+      font-weight: 700;
+    }
+    .text2{
+      color: #fff;
+      font-size: 32rpx;
+    }
+  }
+  .commonMadule{
+    padding: 24rpx;
+    position: relative;
+    top: -100rpx;
+  }
+  .tuanzhangQuanyi{
+    background-color: #fff;
+    border-radius: 14rpx;
+    padding: 0 34rpx;
+    line-height: 100rpx;
+    .inputBox{
+      display: flex;
+      border-bottom: 1rpx solid #eee;
+      .inputname{ width: 130rpx; }
+      input{ color:#666;opacity: 0.6; }
+      .input{ flex: 1;height: 100rpx; }
+      .codeBox{
+        display: flex;
+        align-items:center;
+        height: 100rpx;
+        color: #666;
+        .childBox{
+          width: 210rpx;
+          height: 40rpx;
+          display: flex;
+          align-items:center;
+          justify-content:center;
+          border-left: 1rpx solid #eee;
+        }
+      }
+      .codeBox.changeColor{ color: #999;}
+    }
+    .inputBox:last-child{
+      border: 0;
+    }
+  }
+}
+button{
+  margin:0 48rpx;
+  margin-bottom: 48rpx;
+  height:88rpx;
+  text-align: center;
+  border-radius: 14rpx;
+  color: #fff;
+  line-height: 88rpx;
+  font-size:28rpx;
+  background: #FE5343 !important;
+}
+button::after{
+  border: 0;
+}
+</style>

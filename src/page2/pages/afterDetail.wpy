@@ -1,0 +1,243 @@
+<template>
+  <view class="orderDetail">
+    <view class="good_cont">
+      <!-- 成功 -->
+      <view class="commonStyle goods_boxx">
+        <view class="modular">
+          <view class="now_time">付款时间:{{dataInfo.order.create_time}}</view>
+          <view style="color:red;" wx:if="{{dataInfo.after.status==0}}">处理中</view>
+          <view style="color:red;" wx:elif="{{dataInfo.after.status==1}}">已完成</view>
+          <view style="color:red;" wx:elif="{{dataInfo.after.status==2}}">已拒绝</view>
+        </view>
+        <view class="orderGoodsList">
+          <image style="width:120rpx;height:120rpx;" mode="aspectFill" src="https://api.118zc.com{{dataInfo.order.default_image}}"/>
+          <view class="info_good">
+            <view class="title">{{dataInfo.order.title}}</view>
+            <view class="number">数量：{{dataInfo.order.num}} 规格：{{dataInfo.order.sku_spec_info}}</view>
+            <view class="money">￥{{dataInfo.order.price}}</view>
+            <view class="now_money">实付金额：<text>￥{{dataInfo.order.total_fee}}</text></view>
+          </view>
+        </view>
+      </view>
+
+      <view class="commonStyle goods_activity_boxx">
+        <view class="modular">
+          <view class="now_time aaa">售后信息</view>
+          <view></view>
+        </view>
+        <view class="modular" style="padding-top:10rpx;padding-bottom:10rpx;">
+          <view style="width:100%;">
+            <view class="orderInfo">
+              <text style="width:110rpx;">售后类型</text>
+              <span wx:if="{{dataInfo.after.after_type=='refunds'}}">退货退款</span>
+              <span wx:else>换货</span>
+            </view>
+            <view class="orderInfo"><text style="width:110rpx;">退款金额</text><span>{{dataInfo.after.fee}}</span></view>
+            <view class="orderInfo"><text style="width:110rpx;">申请时间</text><span>{{dataInfo.after.create_time}}</span></view>
+            <view class="orderInfo"><text style="width:110rpx;">退款理由</text><span>{{dataInfo.after.after_reason}}</span></view>
+            <view class="orderInfo"><text style="width:110rpx;">退款说明</text><span>{{dataInfo.after.desc}}</span></view>
+            
+            <view class="orderInfo">
+              <text style="width:110rpx;">退款方式</text>
+              <span wx:if="{{dataInfo.after.fee_type=='deposit'}}">退到预存款</span>
+              <span wx:else>退到微信</span>
+            </view>
+            <view class="imageBoxx">
+              <image wx:for="{{dataInfo.after.img_urls}}" wx:key="{{index}}" @tap="previewImage({{dataInfo.after.img_urls}},{{item}})" src="https://api.118zc.com{{item}}" alt=""/>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="commonStyle goods_activity_boxx" wx:if="{{dataInfo.info.trade_status==0}}">
+        <view class="modular">
+          <view class="now_time aaa">余额支付</view>
+          <switch checked="{{checked2}}" bindchange="switch2Change" color="#fbc004"/>
+        </view>
+      </view>
+
+    </view>
+
+    <view class="btn_pay_box" wx:if="{{dataInfo.info.trade_status==0}}">
+      <view class="left_">取消订单</view>
+      <view class="right_" @tap="toPay">去付款</view>
+    </view>
+  </view>
+</template>
+<script>
+import wepy from 'wepy'
+import api from '@/api/api'
+import tip from '@/utils/tip'
+export default class afterDetail extends wepy.page {
+  config = {
+    navigationBarTitleText: '售后详情'
+  }
+  data = {
+    dataInfo:{},
+    options:'',
+    payType: 1,
+    checked2: false,
+    checked: false,
+    yes_or_no: true
+  }
+  onLoad(options){
+    console.log(options)
+    this.options = options.id
+    this.getTradeDetail()
+  }
+  sleep (data) {
+    return new Promise((resolve, reject) => {
+      for(let i=0; i<data.length; i++){
+        let aaa = 'https://api.118zc.com'+ data[i]
+        data.splice(i, 1, aaa)
+      }
+      this.$apply()
+      resolve('promise resolved')
+    })
+  }
+  methods = {
+    switch2Change(e){
+      console.log('switch1 发生 change 事件，携带值为', e.detail.value)
+      this.checked2 = e.detail.value
+      if(e.detail.value){
+        this.payType = 0
+      }else{
+        this.payType = 1
+      }
+    },
+    async previewImage(allUrl,url){
+      console.log(allUrl)
+
+      // allUrl.map(item => {
+      //   item = 'https://api.118zc.com'+ item
+      //   return item
+      // })
+      const currentGoodsList = await this.sleep(allUrl)
+      console.log(allUrl)
+      wx.previewImage({
+        current: 'https://api.118zc.com'+url, // 当前显示图片的http链接
+        urls: allUrl // 需要预览的图片http链接列表
+      })
+    }
+  }
+  async getTradeDetail(){
+    let result = await api.orderAfterDetail({
+      query:{
+        token: wx.getStorageSync('openid'),
+        id: this.options
+      },
+      method:'POST'
+    });
+
+    if(!result.data.code){
+      console.log(result.data.data)
+      this.dataInfo = result.data.data
+    }
+
+    this.$apply();
+  }
+}
+</script>
+<style lang="less" scoped>
+switch{ zoom: .5; }
+.orderDetail{
+  background: #F6F6F6;
+  .orderInfo{
+    font-size: 26rpx;
+    color:#999;
+    line-height: 48rpx;
+    text{
+      display: inline-block;
+    }
+    span{
+      color:#333;
+      margin-left: 20rpx;
+    }
+  }
+  .good_cont{
+    padding: 24rpx 24rpx 100rpx 24rpx;
+    .commonStyle{
+      border-radius: 16rpx;
+      background-color: #fff;
+      box-shadow: 0 2px 9px 0 rgba(0,0,0,.04);
+      overflow: hidden;
+      margin-bottom: 20rpx;
+      .modular{
+        display: flex;
+        padding: 30rpx;
+        font-size: 26rpx;
+        color: #999;
+        border-bottom: 1rpx solid #f6f6f6;
+        .now_time{flex: 1;}
+        .now_time.aaa{
+          font-size: 28rpx;
+          color: #333;
+        }
+        .imageBoxx{
+          image{
+            width: 200rpx;
+            height: 200rpx;
+            margin-right: 24rpx;
+          }
+        }
+      }
+      .orderGoodsList{
+        display: flex;
+        align-items: center;
+        padding: 20rpx 30rpx;
+        border-bottom: 1rpx solid #f6f6f6;
+        position: relative;
+        .info_good{
+          padding-left: 24rpx;
+          font-size:26rpx;
+          color: #999;
+          .title{font-size: 30rpx;color: #333;}
+          .now_money{color: #333;text{font-size: 30rpx;color: #FF6356;}}
+        }
+        .absoluteBtn{
+          width: 126rpx;
+          height: 40rpx;
+          position: absolute;
+          bottom: 30rpx;
+          right: 28rpx;
+          border-radius: 34rpx;
+          color: #666;
+          border: 1rpx solid #eee;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size:24rpx;
+        }
+      }
+      .orderGoodsList:last-child{
+        border-bottom:0;
+      }
+    }
+  }
+  .btn_pay_box{
+    width: 100%;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    height: 100rpx;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    text-align: center;
+    .left_{
+      width: 50%;
+      color: #666;
+      background: #fff;
+    }
+    .right_{
+      width: 50%;
+      line-height: 100rpx;
+      text-align: center;
+      height: 100%;
+      background-color: #FF6356;
+      color: #fff;
+      font-size: 30rpx;
+    }
+  }
+}
+</style>

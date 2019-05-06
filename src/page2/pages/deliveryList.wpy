@@ -1,0 +1,179 @@
+<template>
+  <view class="myContainer">
+    <view style="position:fixed;width:100%;top:0;border-top:1rpx solid #eee;">
+      <picker bindchange="bindPickerChange" value="{{index}}" range="{{array}}">
+        <view class="selectBtn">筛选：
+          <span wx:if="{{array[index]}}">{{array[index]}}</span>
+          <span wx:else>请选择小区</span>
+        </view>
+      </picker>
+    </view>
+
+    <view class="good_cont">
+      <!-- 成功 -->
+      <view class="commonStyle" wx:for="{{dataList}}" wx:key="{{index}}">
+        <view class="goods_boxx">
+          <view class="wenzi">
+            <span>配送单：{{item.order_no}}</span>
+            <text wx:if="{{item.status==0}}">配送中</text>
+            <text wx:elif="{{item.status==1}}">已配送</text>
+          </view>
+          <view class="wenzi" style="margin-top:10rpx;">配送时间：{{item.delivery_time}}</view>
+          <view class="btn_box">
+            <span>共 <span style="color:red;">{{item.item_num}}</span> 件商品</span>
+            <view class="absoluteBtn" @tap="go_to_deliveryDetail({{item.id}})">商品明细</view>
+            <view class="absoluteBtn class" @tap="confirm_arrival({{item.id}})">确认到货</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{dataList.length==0}}" class="notice">暂无任何数据</view>
+    
+  </view>
+</template>
+<script>
+import wepy from 'wepy'
+import api from '@/api/api'
+export default class delivery extends wepy.page {
+  config = {
+    navigationBarTitleText: '配送商家列表',
+    usingComponents: {
+      "van-search": "/components/vant/search/index"
+    }
+  }
+  data = {
+    array: [],
+    inputValue: '',
+    value: '',
+    dataList:[],
+    currentId:'',
+    currentPage: 1,
+    index:''
+  }
+  async onLoad(options){
+    console.log(JSON.parse(options.data))
+    this.list = JSON.parse(options.data)
+    this.list.forEach((item,i)=>{
+      this.array[i] = item.community
+    })
+    console.log(this.array)
+    this.$apply();
+  }
+  methods = {
+    go_to_deliveryDetail(id){
+      this.$navigate(`./deliveryDetail?id=${id}`);
+    },
+    async confirm_arrival(id){
+      let rlt = await api.doArrivals({
+        query:{
+          token: wx.getStorageSync('openid'),
+          id: id
+        },
+        method:"POST"
+      });
+      if (rlt.data.code==0) {
+        tip.toast(result.data.msg)
+
+      }else{
+        tip.toast(result.data.msg)
+      }
+    },
+    onSearch(event){
+      console.log(event.detail)
+    },
+    onSearchFn(){
+      if(this.inputValue){
+        console.log(this.inputValue)
+      }
+    },
+    right_off_recharge(){
+
+    },
+    bindPickerChange(e) {
+      console.log('picker发送选择改变，携带值为', e.detail.value)
+      this.index = e.detail.value
+      this.currentId = this.list[e.detail.value].id
+      this.getDeliveryOrderList(this.list[e.detail.value].id)
+    }
+  }
+  async getDeliveryOrderList(currentId){
+    let rlt = await api.getDeliveryOrderList({
+      query:{
+        token: wx.getStorageSync('openid'),
+        team_id: currentId,
+        page : this.currentPage
+      },
+      method:"POST"
+    });
+    if (rlt.data.code==0) {
+      this.dataList = rlt.data.data.list
+    }
+    this.$apply();
+  }
+}
+</script>
+<style lang="less">
+.myContainer{
+  background-color: #f7f7f7;
+  padding-top: 66rpx;
+  .selectBtn{
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content:center;
+    height: 68rpx;
+  }
+
+  .good_cont{
+    padding: 24rpx 24rpx 100rpx 24rpx;
+    .commonStyle{
+      border-radius: 16rpx;
+      background-color: #fff;
+      box-shadow: 0 2px 9px 0 rgba(0,0,0,.04);
+      overflow: hidden;
+      margin-bottom: 20rpx;
+      .goods_boxx{
+        padding: 24rpx;
+        color: #666;
+      }
+      .wenzi{
+        display: flex;
+        span{
+          flex: 1
+        }
+      }
+      .btn_box{
+        display: flex;
+        margin-top: 12rpx;
+        span{
+          flex:1;
+        }
+        .absoluteBtn{
+          width: 126rpx;
+          height: 40rpx;
+          border-radius: 34rpx;
+          color: #666;
+          border: 1rpx solid #eee;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size:24rpx;
+        }
+        .absoluteBtn.class{
+          background: #fd1350;
+          border: 1rpx solid #fd1350;
+          margin-left: 24rpx;
+          color: #fff;
+        }
+      }
+    }
+  }
+  .notice{
+    font-size: 28rpx;
+    color:#999;
+    text-align: center;
+  }
+
+}
+</style>

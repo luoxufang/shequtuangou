@@ -1,0 +1,200 @@
+<template>
+  <view class="couponStyle">
+    <!-- <view class="van_tab_box"> -->
+      <van-tabs active="{{ active }}" bind:change="onChange" style="position:fixed;width:100%;top:0;">
+        <van-tab title="待使用"></van-tab>
+        <van-tab title="已使用"></van-tab>
+        <van-tab title="已过期"></van-tab>
+        <van-tab title="领券中心"></van-tab>
+      </van-tabs>
+      <view class="couponContent" wx:if="{{listData.length>0}}">
+
+        <view class="couponListBox" wx:for="{{listData}}" wx:key="{{index}}">
+          <view class="top">
+            <view class="couponLeft">
+              <view class="money {{!item.status?'':'useed'}}">￥<span style="font-size:40rpx;">{{item.total_quantity}}</span></view>
+              <view class="miaosu">满{{item.mode_money}}元使用</view>
+            </view>
+            <view class="couponCenter">
+              <view class="title useed">{{item.name}}</view>
+              <view class="time"><span>{{item.validity_start_time}}</span>  至  <span>{{item.validity_end_time}}</span></view>
+            </view>
+
+            <view class="couponImg">
+              <image wx:if="{{item.status==1}}" class="scimg" src="https://api.118zc.com/uploads/20190418/20190418234238_5cb89aee64c5c.png" style="width:100%;height:100%;"/>
+              <image wx:elif="{{item.status==2}}" class="scimg" src="https://api.118zc.com/uploads/20190418/20190418234238_5cb89aee64c5c.png" style="width:100%;height:100%;"/>
+            </view>
+            <view wx:if="{{active==3}}">
+              <!-- <image class="selectImg" wx:if="{{currentCouponId==item.id}}" src="../../assets/comment_select.png" alt=""/>
+              <image class="selectImg" wx:else src="../../assets/comment_normal.png" alt=""/> -->
+              <view @tap="getCouponFn({{item.id}})" class="getCouponBtn">领取</view>
+            </view>
+          </view>
+          <view class="cut_off_line"><view class="radiusL"></view><view class="radiusR"></view></view>
+          <view class="bottom">仅指定商品</view>
+        </view>
+
+      </view>
+
+      <view class="search_no" wx:if="{{listData.length == 0}}">
+        <view class="font_14"><image class="scimg" src="../../assets/search_no.png" style="width:189rpx;height:189rpx;"></image></view>
+        <text>列表是空的哦~</text>
+      </view>
+      <i-load-more wx:if="{{isLoading}}" i-class="loadingClassYes" loading="{{true}}" />
+      <i-load-more wx:if="{{loadOnNoData&&listData.length>0}}" i-class="loadingClassNo" tip="没有更多了" loading="{{false}}" />
+    <!-- </view> -->
+  </view>
+</template>
+<script>
+  import wepy from 'wepy'
+  import api from '@/api/api'
+  import tip from '@/utils/tip'
+  export default class Coupon extends wepy.page {
+    config = {
+      navigationBarTitleText: '优惠券',
+      usingComponents: {
+        "van-tab": "/components/vant/tab/index",
+        "van-tabs": "/components/vant/tabs/index",
+        "i-load-more": "../../resources/ui/load-more/index"
+      }
+    }
+    components = {}
+    data = {
+      nowIndex: '',
+      listData: [],
+      active:'0',
+      couponList:[],
+      currentPage: 1,
+      isLoading:false,
+      loadOnNoData:false
+    }
+    onLoad(options) {
+      console.log(options.type)
+      if(options.type){
+        this.active = options.type //vant组件
+      }
+      //获取列表数据
+      this.getCouponList();
+    }
+    methods = {
+      selectitem(id) {
+        console.log("左边分类id:"+id)
+        let that = this;
+        that.nowIndex = id;
+        that.$apply();
+      },
+      onChange(event) {
+        this.active = event.detail.index
+        this.currentPage = 1
+        this.listData = []
+        if(event.detail.index==3){
+          this.getAllCouponList()
+        }else{
+          this.getCouponList();
+        }
+      },
+      async getCouponFn(id){
+        let rlt = await api.doReceive({
+          query:{
+            token: wx.getStorageSync('openid'),
+            id: id
+          },
+          method:"POST"
+        });
+        if (!rlt.data.code) {
+          this.isLoading = false
+          tip.toast(rlt.data.msg)
+        }else{
+          this.isLoading = false
+          tip.toast(rlt.data.msg)
+        }
+        this.$apply();
+      }
+    }
+    sleep (data) {
+      return new Promise((resolve, reject) => {
+        let aaaa = data.map(item => {
+          resolve('promise resolved2')
+          return this.listData.push(item)
+        })
+      })
+      this.$apply();
+    }
+    
+    async getCouponList() {
+      let rlt = await api.getCouponList({
+        query:{
+          token: wx.getStorageSync('openid'),
+          status: this.active,
+          pageSize: 20,
+          page: this.currentPage
+        },
+        method:"POST"
+      });
+      if (rlt.data.code==0) {
+        this.isLoading = false
+        let listData = rlt.data.data.list
+        let orderList = await this.sleep(listData)
+        if(listData.length>0){ this.currentPage++ }
+        if(listData.length<20){ this.loadOnNoData = true }
+      }
+      this.$apply();
+    }
+    // 获取所有优惠券列表
+    async getAllCouponList(){
+      let rlt = await api.getAllCouponList({
+        query:{
+          token: wx.getStorageSync('openid'),
+          status: this.active,
+          pageSize: 20,
+          page: this.currentPage
+        },
+        method:"POST"
+      });
+      if (!rlt.data.code) {
+        this.isLoading = false
+        let listData = rlt.data.data.list
+        let orderList = await this.sleep(listData)
+        if(listData.length>0){ this.currentPage++ }
+        if(listData.length<20){ this.loadOnNoData = true }
+      }
+      this.$apply();
+    }
+
+    onReachBottom() {
+      console.log('触到底了？？')
+      if(!this.loadOnNoData&&this.active!==3){//没到底
+        this.isLoading =true
+        this.getCouponList()
+      }else if(!this.loadOnNoData&&this.active==3){
+        this.isLoading =true
+        this.getAllCouponList()
+      }
+      this.$apply();
+    }
+  }
+</script>
+<style lang='less' scoped>
+@import '../../utils/style.less';
+page{
+  background: #f7f7f7;
+}
+.couponStyle {
+  background-color: #f7f7f7;
+  padding-top: 90rpx;
+}
+.money.useed{ color: #999; }
+.title.useed{ color: #999 !important; }
+.top{ align-items: center; }
+.getCouponBtn{ 
+  width: 88rpx;
+  height:42rpx;
+  background: #fd1350;
+  border-radius: 34rpx;
+  font-size: 24rpx;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+</style>

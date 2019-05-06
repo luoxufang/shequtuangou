@@ -1,0 +1,95 @@
+<template>
+  <view class="myContainer">
+    
+    <view class="reflectRecode">
+      <view class="list" wx:for="{{dataList}}" wx:key="{{index}}">
+        <image style="width:60rpx;height:60rpx;margin-right:20rpx;" src="../../assets/images/money.png" alt=""/>
+        <view class="titleAndTile">
+          <view class="title">{{item.desc}}</view>
+          <view class="titme">{{item.create_time}}</view>
+        </view>
+        <view class="moneyNumber">-{{item.amount}}</view>
+      </view>
+
+    </view>
+
+    <view class="notice" wx:if="{{dataList.length==0}}">暂无任何数据</view>
+    
+  </view>
+</template>
+<script>
+import wepy from 'wepy'
+import api from '@/api/api';
+export default class reflectRecode extends wepy.page {
+  config = {
+      navigationBarTitleText: '提现记录'
+    }
+    data = {
+      select: 1,
+      active: true,
+      commomPage: 1,
+      dataList: []
+    }
+    async onLoad(){
+      const data = await api.getCashList({
+        query:{ 
+          token: wx.getStorageSync('openid'),
+          page: this.commomPage,
+          pageSize: 20
+        },
+        method:'post'
+      });
+      if(!data.data.code){
+        this.dataList = data.data.data.list
+        // tip.toast()
+      }
+      this.$apply()
+    }
+    methods = {
+      right_off_recharge(){
+        
+      },
+      selectBtn(type){
+        if(type==1){
+          this.active = true
+        }else{
+          this.active = false
+        }
+      }
+    }
+}
+</script>
+<style lang="less">
+.myContainer{
+  background-color: #f7f7f7;
+  .reflectRecode{
+    padding-bottom: 100rpx;
+    .list{
+      display: flex;
+      align-items: center;
+      font-size: 32rpx;
+      color: #333;
+      padding: 28rpx;
+      border-bottom: 1rpx solid #eee;
+      background: #fff;
+
+      .moneyNumber.active{ color:#1AAD16; }
+      .titleAndTile{
+        flex: 1;
+        .titme{
+          font-size: 24rpx;
+          color:#999;
+        }
+      }
+    }
+    .list:last-child{
+      border-bottom: 0;
+    }
+  }
+  .notice{
+    font-size: 28rpx;
+    color:#999;
+    text-align: center;
+  }
+}
+</style>

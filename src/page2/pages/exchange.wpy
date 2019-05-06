@@ -1,0 +1,203 @@
+<!--积分规则-->
+<template>
+  <view class="exchange">
+    <view class="imgBoxx">
+      <div class="score">
+        <view class="title">我的积分</view>
+        <view class="number">{{config}}</view>
+      </div>
+    </view>
+    <view class="listBox">
+
+      <view class="list" wx:for="{{couponList}}" wx:key="{{item}}">
+        <view class="colorBox">
+          <view>
+            <view>￥{{item.mode_money}}</view>
+            <view>优惠券</view>
+          </view>
+          <view class="whiteRadis"></view>
+        </view>
+
+        <view class="rightBox">
+          <view class="title">{{item.name}}</view>
+          <view class="cont">满{{item.threshold_money}}元可用</view>
+          <!-- <view class="cont" style="color:#999;">有效期：兑换后{{}}天</view> -->
+          <view class="cont" style="font-size:24rpx;margin-bottom:0;">价格：{{item.point_val}}积分</view>
+        </view>
+        <view class="exchangeBtn" @tap="doReceive({{item.id}})">立即兑换</view>
+        <view class="quanZi">券</view>
+      </view>
+
+    </view>
+    
+  </view>
+</template>
+<script>
+import wepy from 'wepy'
+import api from '@/api/api'
+import tip from '@/utils/tip'
+export default class exchange extends wepy.page {
+  config = {
+    navigationBarTitleText: '积分兑换',
+  }
+  props = {
+    number: ''
+  }
+  data = {
+    config: '',
+    couponList:[]
+  }
+  onLoad() {
+    this.getAllCouponList()
+    this.getUserSign()
+    this.config = wx.getStorageSync('config')
+    this.$apply();
+  }
+  methods = {
+    async doReceive(id) {
+      let that = this;
+      const json = await api.doReceive({
+        query: {
+          token: wx.getStorageSync('openid'),
+          id:id
+        },
+        method:"POST"
+      });
+      if (json.data.code == 0) {
+        tip.toast(json.data.msg)
+      }else{
+        tip.toast(json.data.msg)
+      }
+    }
+  }
+  async getAllCouponList() {
+    let that = this;
+    const json = await api.getAllCouponList({
+      query: {
+        token: wx.getStorageSync('openid'),
+        release_type:'point_exchange'
+      },
+      method:"POST"
+    });
+    if (json.data.code == 0) {
+      that.couponList = json.data.data.list
+    }
+    that.$apply();
+  }
+  async getUserSign() {
+    let that = this;
+    const json = await api.getSignInfo({
+      query: {
+        token: wx.getStorageSync('openid')
+      },
+      method:"POST"
+    });
+    if (json.data.code == 0) {
+      that.config = json.data.data.config
+    }
+  }
+}
+
+</script>
+<style lang="less">
+.imgBoxx {
+  height: 260rpx;
+  background-image:url(https://api.118zc.com/uploads/20190322/20190322230413_5c94f96d0425e.png);
+  background-repeat: no-repeat;
+  background-size: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  .score{
+    color: #fff;
+    font-size: 36rpx;
+    text-align: center;
+    .title{
+      margin-bottom: 20rpx;
+    }
+  }
+}
+.exchange{
+  .listBox{
+    padding: 30rpx 20rpx;
+    .list{
+      background: #fff;
+      padding: 20rpx;
+      display: flex;
+      align-items: center;
+      position: relative;
+      border-radius: 10rpx;
+      margin-bottom: 24rpx;
+      .colorBox{
+        position: relative;
+        width: 200rpx;
+        height: 120rpx;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-right: 30rpx;
+        color: #fff;
+        border-radius: 12rpx;
+        background: #FF3D2C;
+        background: -moz-linear-gradient(left, #FF3D2C 0%, #FF6D0D 100%);
+        background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#FF3D2C), color-stop(100%,#FF6D0D));
+        background: -webkit-linear-gradient(left, #FF3D2C 0%,#FF6D0D 100%);
+        background: -o-linear-gradient(left, #FF3D2C 0%,#FF6D0D 100%);
+        background: -ms-linear-gradient(left, #FF3D2C 0%,#FF6D0D 100%);
+        background: linear-gradient(to right, #FF3D2C 0%,#FF6D0D 100%);
+        .whiteRadis{
+          background: #fff;
+          width: 40rpx;
+          height: 40rpx;
+          border-radius: 50%;
+          position: absolute;
+          right:-16rpx;
+          top: 40rpx;
+        }
+      }
+      .rightBox{
+        .title{
+          color:#333;
+          font-size: 30rpx;
+          margin-bottom: 34rpx;
+        }
+        .cont{
+          font-size: 28rpx;
+          color:#666;
+          margin-bottom:6rpx;
+        }
+      }
+      .exchangeBtn{
+        width: 140rpx;
+        height: 48rpx;
+        line-height: 48rpx;
+        text-align: center;
+        background: #FF6D0D;
+        color: #fff;
+        border-radius: 12rpx;
+        position: absolute;
+        right: 24rpx;
+        bottom: 24rpx;
+        z-index: 100;
+      }
+      .quanZi{
+        width: 100rpx;
+        height: 100rpx;
+        position: absolute;
+        right: 20rpx;
+        bottom: 16rpx;
+        font-size: 48rpx;
+        color: #eee;
+        border-radius: 50%;
+        border: 4rpx solid #eee;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+    }
+    .list:last-child{
+      margin-bottom: 0;
+    }
+  }
+}
+</style>

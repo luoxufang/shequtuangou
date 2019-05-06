@@ -1,0 +1,272 @@
+<style lang="less">
+page{
+  height: 100%;
+  background-color: #F6F6F6;
+  font-size: 28rpx;
+  position: relative;
+}
+::-webkit-scrollbar{
+  width: 0;
+  height: 0;
+  color: transparent;
+}
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+/*按钮边字*/
+.commonColor.commonBorder{
+  border: 2rpx solid #d91f54 !important;
+  color: #d91f54 !important; 
+  background: #fff5f4;
+}
+/*分类点击*/
+.commonColor.commonBg{
+  background-color: #FFF !important;
+  color: #FFB202 !important; 
+}
+.commonBorder{
+  border:2rpx solid #FFB202 !important;
+}
+/*文字左边的竖*/
+.commonBorder2{
+  border-left:6rpx solid #FFB202 !important;
+}
+/*我的订单nav*/
+.commonColor.commonBorder3{
+  color:#FFB202;
+  border-bottom:5rpx solid #FFB202;
+}
+.wxParse .WxEmojiView{
+  // text-indent: 60rpx;
+  display: block;
+}
+.wxParse-p .WxEmojiView{
+  // text-indent: 60rpx;
+  display: block;
+}
+.wxParse{
+  image{
+    width: 100%;
+  }
+}
+// 全局修改 vant 组件
+.van-tag.van-tag--round{padding:.1em .5em !important;margin-right: 5px;}
+// .myOrder .van-ellipsis.van-ellipsis.van-tab{
+//   flex-basis:20% !important;
+//   font-size: 13px;
+// }
+.van-tabs__line{
+  height: 3px !important;
+  border-radius: 6px !important;
+  background: #d91f54;
+  background: -moz-linear-gradient(left, #d91f54 0%, #fe4f63 100%);
+  background: -webkit-gradient(linear, top left, top right, color-stop(0%,#d91f54), color-stop(100%,#fe4f63));
+  background: -webkit-linear-gradient(left, #d91f54 0%,#fe4f63 100%);
+  background: -o-linear-gradient(left, #d91f54 0%,#fe4f63 100%);
+  background: -ms-linear-gradient(left, #d91f54 0%,#fe4f63 100%);
+  background: linear-gradient(to right, #d91f54 0%,#fe4f63 100%);
+}
+.goodDetail .van-info{
+  font-size:10px;
+}
+</style>
+
+<script>
+import wepy from 'wepy'
+import 'wepy-async-function'
+import { setStore } from 'wepy-redux'
+import api from '@/api/api';
+import tip from '@/utils/tip';
+// import configStore from './store'
+// const store = configStore()
+// setStore(store)
+
+export default class extends wepy.app {
+  config = {
+    pages: [
+      'pages/index',
+      'pages/authorize',
+      
+      "pages/category",
+      "pages/shopCart",
+      "pages/center",
+      "pages/categorylsit",
+      "pages/myOrder",
+      "pages/showHome",
+      "pages/selectCity",
+      "pages/cart",
+      "pages/goodDetail",
+      "pages/shopRecord",
+      "pages/group",
+      "pages/orderDetail",
+      "pages/couponChoose",
+      "pages/recruit",
+      "pages/supplier",
+      "pages/applyTuan",
+      "pages/balance",
+      "pages/orderConfirm"
+    ],
+    "subPackages": [
+      {
+        "root": "page2",
+        "pages": [
+          "pages/recharge",
+          "pages/reflect",
+          "pages/reflectRecode",
+          "pages/memberList",
+          "pages/orderManage",
+          "pages/pkPage",
+          "pages/afterSale",
+          "pages/sign_in",
+          "pages/saleCommit",
+          "pages/deliveryDetail",
+          "pages/deliveryList",
+          "pages/moneyCount",
+          "pages/orderManageDetail",
+          "pages/afterDetail",
+          "pages/xieyi",
+          "pages/search",
+          "pages/about",
+          "pages/exchange",
+          "pages/coupon",
+        ]
+      }
+    ],
+    preloadRule: {
+      "pages/center": {
+        "network": "all",
+        "packages": ["page2"]
+      }
+    },
+    permission: {
+      "scope.userLocation": {
+        "desc": "团队服务需要您的地理位置"
+      }
+    },
+    window: {
+      backgroundTextStyle: "light",
+      navigationBarBackgroundColor:"#ffffff",
+      navigationBarTitleText: "WeChat",
+      navigationBarTextStyle: "black"
+    },
+    tabBar: {
+      backgroundColor: "#fafafa",
+      borderStyle: "white",
+      selectedColor: "#d91f54",
+      color: "#666",
+      list: [{
+          pagePath: "pages/index",
+          iconPath: "assets/images/index2@2x.png",
+          selectedIconPath: "assets/images/index@2x.png",
+          text: "首页"
+        },
+        {
+          pagePath: "pages/category",
+          iconPath: "assets/images/class.png",
+          selectedIconPath: "assets/images/class1.png",
+          text: "分类"
+        },
+        {
+          pagePath: "pages/shopCart",
+          iconPath: "assets/images/wdjp@2x.png",
+          selectedIconPath: "assets/images/wdjp2@2x.png",
+          text: "购物车"
+        },
+        {
+          pagePath: "pages/center",
+          iconPath: "assets/images/us2@2x.png",
+          selectedIconPath: "assets/images/us@2x.png",
+          text: "我的"
+        }
+      ]
+    }
+  }
+
+  globalData = {
+    userInfo: null,
+    commonCart:'',
+    currentClassId:'',
+    wxCode:'aaaa',
+    indexGoods:[]
+  }
+
+  constructor () {
+    // this is not allowed before super()
+    super()
+    this.use('requestfix')
+    this.use('promisify')
+  }
+  onLaunch() {
+    // this.checkAuthorize()
+    wx.getSystemInfo({
+      success(res) {}
+    })
+    if(wx.getStorageSync('USER_INFO')){
+      this.changeCartNumber()
+    }
+    //初始化当前分类id
+    this.globalData.currentClassId = ''
+  }
+
+  changeCartNumber() {
+    return new Promise((resolve, reject) => {
+      // const vsdf = await this.getCartList()
+      let that = this
+      let openId = wx.getStorageSync('openid')
+
+      wx.request({
+        url: 'https://api.118zc.com/getCartList', //仅为示例，并非真实的接口地址
+        data: {
+          token: openId
+        },
+        method:'GET',
+        header: {
+          'content-type': 'application/json' // 默认值  application/x-www-form-urlencoded
+        },
+        success: function(res) {
+          let num = 0;
+          for(let i=0; i < res.data.data.list.length; i++){
+            num = num + parseInt(res.data.data.list[i].quantity)
+          }
+          // console.log(num)
+          // console.log('阿里巴巴马云')
+          if(num==0) {
+            wx.removeTabBarBadge({index:2})
+            return
+          }
+          that.globalData.commonCart = JSON.stringify(num)
+          wx.setTabBarBadge({ //设置
+            index: 2,
+            text: JSON.stringify(num)
+          })
+          resolve('promise resolved')
+        }
+      })
+    })
+  }
+  async checkAuthorize(){
+    // 可以通过 wx.getSetting 先查询一下用户是否授权了 "scope.userInfo" 这个 scope
+    let that = this
+    wepy.getSetting({
+      success(res) {
+        // if(!res.authSetting['scope.userLocation']){
+        //   wx.getLocation({
+        //     type: 'gcj02',
+        //     success: function(res) {
+        //       var latitude = res.latitude
+        //       var longitude = res.longitude
+        //       console.log(res.latitude,res.longitude)
+        //     }
+        //   })
+        // }
+      }
+    })
+  }
+  
+}
+</script>

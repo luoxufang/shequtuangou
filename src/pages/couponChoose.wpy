@@ -1,0 +1,133 @@
+<template>
+  <view class="couponStyle">
+    <view class="no_choose_coupon" @tap="Select_Yes_No">
+      <view class="txt">不使用优惠券</view>
+      <image wx:if="{{currentCouponId==0}}" src="../assets/comment_select.png" alt=""/>
+      <image wx:else src="../assets/comment_normal.png" alt=""/>
+    </view>
+
+    <view class="couponContent">
+      <view class="couponListBox" wx:for="{{listData}}" wx:key="{{index}}">
+        <view class="top" @tap="selectCoupon({{item.id}})">
+          <view class="couponLeft">
+            <view class="money useed">￥<span style="font-size:40rpx;">{{item.mode_money}}</span></view>
+            <view class="miaosu" wx:if="{{item.is_threshold==1}}">满{{item.threshold_money}}元使用</view>
+            <view class="miaosu" wx:else>不限制</view>
+          </view>
+          <view class="couponCenter">
+            <view class="title useed">{{item.name}}</view>
+            <view class="time">{{item.validity_start_time}}至{{item.validity_end_time}}</view>
+          </view>
+          <image wx:if="{{item.id == currentCouponId}}" style="width: 38rpx;height:38rpx;" src="../assets/comment_select.png" alt=""/>
+          <image wx:else style="width: 38rpx;height:38rpx;" src="../assets/comment_normal.png" alt=""/>
+        </view>
+        <view class="cut_off_line"><view class="radiusL"></view><view class="radiusR"></view></view>
+        <view class="bottom">{{item.desc}}</view>
+      </view>
+
+    </view>
+    <view class="search_no" wx:if="{{couponList.length == 0}}">
+      <view class="font_14"><image class="scimg" src="../assets/search_no.png" style="width:189rpx;height:189rpx;"></image></view>
+      <text>列表是空的哦~</text>
+    </view>
+
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import api from '@/api/api';
+  import tip from '@/utils/tip'
+  export default class CouponChoose extends wepy.page {
+    config = {
+      navigationBarTitleText: '优惠券选择'
+    }
+    components = {}
+    data = {
+      nowIndex: '',
+      listData: [],
+      ids:[],
+      noSelectCoupon: true,
+      currentCouponId:''
+    }
+    onShow(){}
+    async onLoad(option) { 
+      this.ids = wx.getStorageSync('useCouponIds')
+      let result = await api.getCouponList({
+        query:{
+          token: wx.getStorageSync('openid'),
+          ids: this.ids.join('_'),
+          pageSize: 20,
+          page: 1
+        },
+        method:"POST"
+      });
+      console.log(result.data.data.list)
+      if(!result.data.code){
+        this.listData = result.data.data.list
+      }
+      this.currentCouponId = wx.getStorageSync('currentCouponId')
+      console.log(this.currentCouponId)
+
+      this.$apply();
+    }
+    methods = {
+      selectitem(id) {
+        let that = this;
+        that.nowIndex = id;
+        that.$apply();
+      },
+      Select_Yes_No(){
+        wx.setStorageSync('currentCouponId', 0)
+        this.noSelectCoupon = !this.noSelectCoupon
+        wx.navigateBack({ delta: 1 })
+        this.$apply();
+      },
+      selectCoupon(id){
+        wx.setStorageSync('currentCouponId', id)
+        wx.navigateBack({ delta: 1 })
+      }
+    }
+
+    onReachBottom() {
+      console.log('触到底了？？')
+      return
+      if(!this.loadOnNoData){//没到底
+        this.isLoading =true
+        // this.getCouponList()
+      }
+      this.$apply();
+    }
+  }
+</script>
+<style lang='less' scoped>
+@import '../utils/style.less';
+page{
+  background: #fff;
+}
+.no_choose_coupon{
+  margin-top: 20rpx;
+  padding: 0 30rpx;
+  display: flex;
+  align-items: center;
+  font-size: 28rpx;
+  color:#666;
+  background-color: #fff;
+  height: 100rpx;
+  .txt{
+    flex: 1;
+  }
+  image{
+    width: 38rpx;
+    height: 38rpx;
+  }
+}
+.couponContent .couponListBox .top{
+  align-items: center;
+}
+.couponStyle {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+</style>

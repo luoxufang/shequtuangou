@@ -1,0 +1,584 @@
+<template>
+  <view class="container">
+    
+    <!-- <view class="card"></view> -->
+    <canvas canvas-id="myCanvas" class="canvasShow" style="width:{{canvasWidth}}px; height:{{canvasHeight}}px; display:{{canvasShow ? 'block': 'none'}}"/>
+    <!-- <footer @tap="saveImg()">保存海报转发给好友</footer> -->
+    <view class="footer" @tap="saveImg()">保存海报转发给好友</view>
+
+<!-- 未授权提示授权相册功能 -->
+    <view class="modalBody" wx:if="{{showBtn}}">
+      <view class="header modalHeader" catchtouchmove="hiddenTouch">
+        <image src="../assets/images/center6.png" ref="" id="ad" alt="" />
+      </view>
+        <text>温馨提示</text>
+      <!-- </header> -->
+      <view class="main modalMain" catchtouchmove="hiddenTouch">
+        <text>还没有授权保存到相册的功能哦</text>
+      </view>
+      <!-- </main> -->
+      <button @tap="openSettingBtn()" open-type="openSetting">去授权</button>
+    </view>
+
+    <view id="modal" wx:if="{{showBtn}}"></view>
+
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import tip from '@/utils/tip'
+  import api from '@/api/api';
+  import { base64src } from '../utils/base64src.js'
+
+  export default class Canvas extends wepy.page {
+    config = {
+      navigationBarTitleText: '生成二维码图片'
+    }
+    components = {}
+    data = {
+      bodyHeight: 956,
+      canvasShow: true,
+      showBtn: false,
+      avatar: '',
+      logo: '',
+      weCode: '',
+      cardDetail: {
+        'headimg':'https://api.118zc.com/uploads/20190419/20190419164858_5cb98b7a7e365.jpg',
+        'name':'落飞雯',
+        'position':'前端开发工程师'
+      },
+      wxCode:'',
+      winWidth:'',
+      canvasWidth:'',
+      canvasHeight:'',
+      currentVipInfo:'',
+      indexGoods:[],
+      returnUrl1:'',
+      returnUrl2:'',
+      returnUrl3:'',
+      returnUrl4:'',
+    }
+    onShow(){
+      let self = this
+      self.indexGoods = self.$parent.globalData.indexGoods
+      self.aaaa()
+      self.changeImage(1)
+      self.changeImage(2)
+      self.changeImage(3)
+      self.changeImage(4)
+    }
+    async onLoad () {
+      this.initSystemInfo()
+      let self = this
+      // self.indexGoods = self.$parent.globalData.indexGoods
+      self.currentVipInfo = wx.getStorageSync('currentVipInfo');
+      // sourcePage=24
+      let result = await api.getShareImgCode({
+        query:{ 
+          page: 'pages/index', 
+          param: 'tid=10'//后期添加携带 团长id
+        }
+      });
+      if(!result.data.code){
+        self.wxCode = result.data.data.img_url
+        if (self.cardDetail.headimg && self.wxCode) {
+          self.loadFile();
+          self.$apply()
+        } else {
+          wx.showToast({
+            title: '生成海报失败',
+            icon: 'none',
+            duration: 2000
+          });
+        }
+        
+      }else {
+        wx.showToast({
+          title: '生成海报失败',
+          icon: 'none',
+          duration: 2000
+        });
+        // setTimeout(() => {
+        //   wx.navigateBack({
+        //     delta: 1
+        //   });
+        // }, 2001);
+      }
+    }
+    methods = {
+      openSettingBtn () {
+        this.canvasShow = true;
+        this.showBtn = false;
+      },
+      saveImg () {
+        if (!this.canvasShow) {
+          return;
+        }
+        let self = this;
+        wx.showLoading({
+          title: '保存中...',
+          mask: true
+        });
+
+        wx.getSetting({
+          success: (res) => {
+            let allSetting = res.authSetting;
+            let phoneSetting = allSetting['scope.writePhotosAlbum'];
+            if (phoneSetting === false) {
+              wx.hideLoading();
+              self.showBtn = true;
+              self.canvasShow = false;
+              return;
+            }
+            if (!phoneSetting) {
+              wx.authorize({
+                scope: 'scope.writePhotosAlbum',
+                success () {
+                  self.canvasToPhonto();
+                },
+                fail () {
+                  wx.hideLoading();
+                  wx.showToast({
+                    title: '保存失败',
+                    icon: 'none',
+                    duration: 2000
+                  });
+                }
+              });
+            }
+            if (phoneSetting) {
+              self.canvasToPhonto();
+            }
+          },
+          fail: function() {
+            wx.hideLoading();
+            wx.showToast({
+              title: '保存失败,请稍后再试',
+              icon: 'none',
+              duration: 2000
+            });
+          }
+
+        });
+      }
+    }
+    aaaa(){
+      this.indexGoods.map((item)=>{
+        if(item.title.length>9){
+          item.title = item.title.slice(0,5) + '...'
+        }
+        return item
+      })
+      this.$apply();
+    }
+
+    initSystemInfo () {
+      let that = this
+      wx.getSystemInfo({
+        success (res) {
+          that.winWidth = res.windowWidth
+          that.canvasWidth = res.windowWidth
+          that.canvasHeight = res.windowHeight - 60
+          console.log(res.windowWidth)
+        }
+      });
+      that.$apply();
+    }
+    
+    loadFile () {
+      wx.showLoading({
+        title: '生成中...',
+      });
+      let self = this;
+      wx.downloadFile({
+        url: self.cardDetail.headimg,
+        success(res1) {
+          if (res1.statusCode === 200) {
+            console.log(res1.tempFilePath)
+            self.avatar = res1.tempFilePath;
+            wx.downloadFile({
+              url: self.wxCode,
+              success(res3) {
+                console.log(res3.tempFilePath)
+                
+                if (res3.statusCode === 200) {
+                  self.weCode = res3.tempFilePath;
+                  setTimeout(()=>{
+                    wx.hideLoading();
+                    self.generatePost();
+                  },500)
+                }
+              },
+              fail() {
+                wx.showToast({
+                  title: '生成失败',
+                  icon: 'none',
+                  duration: 2000
+                });
+                wx.hideLoading();
+              }
+            });
+          }
+        },
+        fail() {
+          wx.showToast({
+            title: '生成失败',
+            icon: 'none',
+            duration: 2000
+          });
+          wx.hideLoading();
+        }
+      });
+    }
+    changePx(e) {
+      let t = wx.getSystemInfoSync().windowWidth;
+      e = e * t / 750;
+      return e;
+    }
+    changeImage(type){
+      let that = this
+      let imgUrl;
+      if(type==1){
+        imgUrl = that.indexGoods[0].default_image
+      }else if(type==2){
+        imgUrl = that.indexGoods[1].default_image
+      }else if(type==3){
+        imgUrl = that.indexGoods[2].default_image
+      }else if(type==4){
+        imgUrl = that.indexGoods[3].default_image
+      }
+      wx.downloadFile({
+        url: imgUrl,
+        success(res1) {
+          if (res1.statusCode === 200) {
+            if(type==1){
+              that.returnUrl1 = res1.tempFilePath
+            }else if(type==2){
+              that.returnUrl2 = res1.tempFilePath
+            }else if(type==3){
+              that.returnUrl3 = res1.tempFilePath
+            }else if(type==4){
+              that.returnUrl4 = res1.tempFilePath
+              console.log('4'+that.returnUrl4)
+            }
+            that.$apply();
+          }
+        },
+        fail() {
+          wx.showToast({
+            title: '生成失败',
+            icon: 'none',
+            duration: 2000
+          });
+        }
+      });
+      
+    }
+    generatePost () {
+      let self = this;
+      const ctx = wx.createCanvasContext('myCanvas');
+      //背景模板+背景颜色
+      let W = self.winWidth;
+      ctx.clearRect(0, 0, W, W +40);
+      ctx.setFillStyle('#fff');
+      let str = '今日爆款推荐'
+      //canvas宽度
+      // ctx.fillRect(0, self.changePx(66), self.changePx(602), self.changePx(770));
+      //改
+      ctx.fillRect(0, 0, W, W * 2)
+      ctx.save();
+
+      ctx.beginPath();  
+      // ctx.arc(self.changePx(301), self.changePx(76.5), self.changePx(76), 0, 2 * Math.PI);
+      // ctx.clip();
+      
+      ctx.setFontSize(20);
+      ctx.setFillStyle('#d91f54');
+      // 剩余宽度50%开始绘制文字
+      ctx.fillText(str,(W - ctx.measureText(str).width) * 0.5 ,W * 0.1);
+      ctx.setTextAlign('center');
+
+      // ctx.fillText(self.cardDetail.position, self.changePx(301), self.changePx(250));
+
+      ctx.setFillStyle('#fff')
+      ctx.fillRect(0, 70, W/2, 80)
+      ctx.drawImage(self.returnUrl1, 10, 74, self.changePx(140), self.changePx(140));
+      // ctx.closePath()
+      ctx.stroke()
+      ctx.setFontSize(12)
+      ctx.setFillStyle('#333')
+      ctx.setTextAlign('left')
+      ctx.fillText(self.indexGoods[0].title, 92, 95)
+      
+      ctx.setFontSize(11)
+      ctx.setFillStyle('#666')
+      ctx.setTextAlign('left')
+      ctx.fillText('原价:'+self.indexGoods[0].mkt_price, 92, 115)
+
+      ctx.setFontSize(11)
+      ctx.setFillStyle('red')
+      ctx.setTextAlign('left')
+      ctx.fillText('现价:'+self.indexGoods[0].price, 92, 135)
+      // ---------------------------------------------------
+      
+      ctx.setFillStyle('#fff')
+      ctx.fillRect(W/2, 70, W/2, 80)
+      ctx.drawImage(self.returnUrl2, W/2+10, 74, self.changePx(140), self.changePx(140));
+      ctx.stroke()
+      ctx.setFontSize(12)
+      ctx.setFillStyle('#333')
+      ctx.setTextAlign('left')
+      ctx.fillText(self.indexGoods[1].title, W/2+92, 95)
+      
+      ctx.setFontSize(11)
+      ctx.setFillStyle('#666')
+      ctx.setTextAlign('left')
+      ctx.fillText('原价:'+self.indexGoods[1].mkt_price, W/2+92, 115)
+
+      ctx.setFontSize(11)
+      ctx.setFillStyle('red')
+      ctx.setTextAlign('left')
+      ctx.fillText('现价:'+self.indexGoods[1].price, W/2+92, 135)
+      // ---------------------------------------------------
+
+      ctx.setFillStyle('#fff')
+      ctx.fillRect(0, 150, W/2, 80)
+      ctx.drawImage(self.returnUrl3, 10, 154, self.changePx(140), self.changePx(140));
+      ctx.stroke()
+      ctx.setFontSize(12)
+      ctx.setFillStyle('#333')
+      ctx.setTextAlign('left')
+      ctx.fillText(self.indexGoods[2].title, 92, 175)
+      
+      ctx.setFontSize(11)
+      ctx.setFillStyle('#666')
+      ctx.setTextAlign('left')
+      ctx.fillText('原价:'+self.indexGoods[2].mkt_price, 92, 195)
+
+      ctx.setFontSize(11)
+      ctx.setFillStyle('red')
+      ctx.setTextAlign('left')
+      ctx.fillText('现价:'+self.indexGoods[2].price, 92, 215)
+      // ---------------------------------------------------
+
+      ctx.setFillStyle('#fff')
+      ctx.fillRect(W/2, 150, W/2, 80)
+      ctx.drawImage(self.returnUrl4, W/2+10, 154, self.changePx(140), self.changePx(140));
+      ctx.stroke()
+      ctx.setFontSize(12)
+      ctx.setFillStyle('#333')
+      ctx.setTextAlign('left')
+      ctx.fillText(self.indexGoods[1].title, W/2+92, 175)
+      
+      ctx.setFontSize(11)
+      ctx.setFillStyle('#666')
+      ctx.setTextAlign('left')
+      ctx.fillText('原价:'+self.indexGoods[1].mkt_price, W/2+92, 195)
+
+      ctx.setFontSize(11)
+      ctx.setFillStyle('red')
+      ctx.setTextAlign('left')
+      ctx.fillText('现价:'+self.indexGoods[1].price, W/2+92, 215)
+      // ---------------------------------------------------
+
+
+      //小程序码
+      ctx.drawImage(self.weCode, W/2 + 60, W , self.changePx(150), self.changePx(150));
+
+      ctx.setFontSize(self.changePx(24));
+      ctx.setFillStyle('#999');
+      ctx.setTextAlign('center');
+
+      ctx.fillText('长按识别小程序码', W/2 + 100, W + 110);
+      ctx.setFontSize(self.changePx(24));
+      ctx.setFillStyle('rgba(153,153,153,0.5)');
+      ctx.setTextAlign('center');
+
+      ctx.setFillStyle('#666');
+      ctx.fillText('社区：'+self.currentVipInfo.community, 68, W + 70);
+      ctx.fillText('团长：'+self.currentVipInfo.realname, 50, W + 90);
+      ctx.fillText('提货地址：'+self.currentVipInfo.address, 100, W + 110);
+      ctx.draw();
+
+      self.canvasShow = true;
+      wx.hideLoading();
+    }
+
+    canvasToPhonto () {
+      wx.canvasToTempFilePath({
+        canvasId: 'myCanvas',
+        success: function(res) {
+          let targetFile = res.tempFilePath;
+          wx.saveImageToPhotosAlbum({
+            filePath: targetFile,
+            success (res) {
+              wx.hideLoading();
+              wx.showModal({
+                title: '保存成功',
+                content: '名片已保存到手机相册,你可以分享了',
+                showCancel: false,
+                success: function() {
+                  wx.previewImage({
+                    urls: [targetFile]
+                  });
+                }
+              });
+            },
+            fail: function(res) {
+              console.log(res);
+              wx.hideLoading();
+              wx.showToast({
+                title: '保存失败,请稍后再试',
+                icon: 'none',
+                duration: 2000
+              });
+            }
+          });
+
+        }
+      });
+    }
+
+    onHide = function() {
+      wx.hideLoading();
+    }
+    onUnload = function() {
+      wx.hideLoading();
+      this.$parent.globalData.wxCode = ''
+    }
+  };
+
+  /*
+  str:要绘制的字符串
+  canvas:canvas对象
+  initX:绘制字符串起始x坐标
+  initY:绘制字符串起始y坐标
+  lineHeight:字行高，自己定义个值即可
+  */
+  function canvasTextAutoLine (str, canvas, initX, initY, lineHeight, maxWidth) {
+    let ctx = canvas;
+    let lineWidth = 0;
+    let canvasWidth = maxWidth;  //ctx.measureText(str).width;
+    let lastSubStrIndex = 0;
+    let count = 0;
+    for ( let i = 0; i < str.length; i++ ) {
+      lineWidth += ctx.measureText(str[i]).width;
+      if (lineWidth > canvasWidth - initX * 1.7) {//减去initX,防止边界出现的问题
+        count++;
+        if (count < 3) {
+          ctx.fillText(str.substring(lastSubStrIndex, i), initX, initY);
+          initY += lineHeight;
+          lineWidth = 0;
+          lastSubStrIndex = i;
+        }
+        if (count === 3) {
+          ctx.fillText(str.substr(lastSubStrIndex, 10) + '...', initX, initY);
+          return;
+        }
+      }
+      if (i == str.length - 1) {//绘制剩余部分
+        ctx.fillText(str.substring(lastSubStrIndex, i + 1), initX, initY);
+      }
+    }
+  }
+
+
+</script>
+
+<style lang="less" scoped>
+  // @import "../utils/style";
+  .container {
+    overflow: hidden;
+    background: #fafafa;
+    position: relative;
+  }
+
+  .card {
+    width: 750rpx;
+    height: 770rpx;
+    box-shadow: 0 0 18rpx rgba(230, 230, 238, 0.9);
+    position: absolute;
+    left: 50%;
+    top: 61rpx;
+    transform: translateX(-50%);
+  }
+
+  .canvasShow {
+    position: absolute;
+    width: 100%;
+    height: 500rpx;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .footer {
+    width: 100%;
+    height: 88rpx;
+    // background: @primary-color;
+    background: #ff7442;
+    line-height: 88rpx;
+    text-align: center;
+    color: white;
+    // font-size: @title-font;
+    font-size: 30rpx;
+    position: fixed;
+    bottom: 0;
+    &:active {
+      opacity: 0.4;
+    }
+  }
+
+  /*弹窗*/
+  .modalBody {
+    position: fixed;
+    z-index: 113;
+    width: 275rpx;
+    height: 296rpx;
+    background: white;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 3rpx;
+    .header.modalHeader {
+      width: 100%;
+      // .flex-column-all-center;
+      color: pink;
+      image{
+        margin: 23rpx 0 18rpx 0;
+        width: 54rpx;
+        height: 60rpx;
+      }
+      text{
+        font-size: 16rpx;
+        color: #000;
+      }
+    }
+    .main.modalMain {
+      margin: 0 auto;
+      width: 70%;
+      text-align: center;
+      // font-size: @text-font;
+      // color: @second-font-color;
+      font-size: 26rpx;
+      color: pink;
+      padding-top: 38rpx;
+      padding-bottom: 43rpx;
+    }
+    button {
+      width: 225rpx;
+      height: 39rpx;
+      border: none;
+      line-height: 39rpx;
+      border-radius: 20rpx;
+      background: #d91f54;
+      font-size: 14rpx;
+      color: white;
+      // .active-opacity;
+    }
+    button::after {
+      border: none;
+    }
+  }
+
+</style>

@@ -1,0 +1,240 @@
+<template>
+  <view class="couponStyle">
+    <!-- <view class="van_tab_box"> -->
+      <van-tabs active="{{ active }}" bind:change="onChange" style="position:fixed;width:100%;top:0;">
+        <van-tab title="全部"></van-tab>
+        <van-tab title="处理中"></van-tab>
+        <van-tab title="已完成"></van-tab>
+        <van-tab title="已拒绝"></van-tab>
+      </van-tabs>
+
+      <view class="couponContent">
+        <view class="couponListBox" wx:if="{{listData.length>0}}">
+
+          <view class="order_box" wx:for="{{listData}}" wx:key="{{index}}">
+            <view class="down_time"><text>申请时间：{{item.create_time}}</text>
+              <text wx:if="{{item.status==0}}" style="color:red;">处理中</text>
+              <text wx:elif="{{item.status==1}}" style="color:red;">已完成</text>
+              <text wx:elif="{{item.status==2}}" style="color:red;">已拒绝</text>
+            </view>
+            <view class="scroll_box">
+              <!-- <scroll-view class="img_view" scroll-x style="width: 100%">
+                <image wx:for="{{item.list}}" wx:key="{{idx}}" mode="aspectFill" src="https://api.118zc.com{{item.default_image}}"/>
+              </scroll-view> -->
+              <image src="https://api.118zc.com{{item.default_image}}" mode="aspectFill" />
+              <view class="contt">
+                <view class="title">{{item.title}}</view>
+                <view class="guige">{{item.sku_spec_info}}</view>
+              </view>
+            </view>
+            <view class="action_info">
+              <view style="flex:1;">
+                <text>交易金额:￥{{item.price}}</text>
+                <text wx:if="{{item.fee_type!==null}}" style="margin-left:24rpx;">退款金额:￥{{item.fee}}</text>
+              </view>
+              <view class="common_btn" @tap="go_to_order_detail({{item.id}})">查看详情</view>
+            </view>
+          </view>
+
+        </view>
+
+      </view>
+
+      <view class="search_no" wx:if="{{listData.length == 0}}">
+        <view class="font_14"><image class="scimg" src="../../assets/search_no.png" style="width:189rpx;height:189rpx;"></image></view>
+        <text>列表是空的哦~</text>
+      </view>
+
+      <i-load-more wx:if="{{isLoading}}" i-class="loadingClassYes" loading="{{true}}" />
+      <i-load-more wx:if="{{loadOnNoData&&listData.length>0}}" i-class="loadingClassNo" tip="没有更多了" loading="{{false}}" />
+    <!-- </view> -->
+  </view>
+</template>
+<script>
+  import wepy from 'wepy'
+  import api from '@/api/api'
+  import tip from '@/utils/tip'
+  export default class Coupon extends wepy.page {
+    config = {
+      navigationBarTitleText: '售后列表',
+      usingComponents: {
+        "van-tab": "/components/vant/tab/index",
+        "van-tabs": "/components/vant/tabs/index",
+        "i-load-more": "../../resources/ui/load-more/index"
+      }
+    }
+    components = {}
+    data = {
+      nowIndex: '',
+      listData: [],
+      active:'0',
+      currentPage: 1,
+      isLoading:false,
+      loadOnNoData:false,
+      typeIs:''
+    }
+    onLoad(option) {
+      //获取列表数据
+      this.getCouponList();
+    }
+    methods = {
+      go_to_order_detail(ids){
+        wx.navigateTo({url: `./afterDetail?id=${ids}`})
+      },
+      selectitem(id) {
+        console.log("左边分类id:"+id)
+        let that = this;
+        that.nowIndex = id;
+        that.$apply();
+      },
+      onChange(event) {
+        this.active = event.detail.index
+        switch(this.active.toString()){//标志位
+          case '0':
+            this.typeIs = ''
+            break;
+          case '1':
+            this.typeIs = '0'
+            break;
+          case '2':
+            this.typeIs = '1'
+            break;
+          case '3':
+            this.typeIs = '2'
+            break;
+          default:
+            break;
+        }
+        this.currentPage = 1
+        this.listData = []
+        this.getCouponList();
+      }
+    }
+    sleep (data) {
+      return new Promise((resolve, reject) => {
+        let aaaa = data.map(item => {
+          resolve('promise resolved26464')
+          return this.listData.push(item)
+        })
+      })
+      this.$apply();
+    }
+    async getCouponList() {
+      let rlt = await api.orderAfterIndex({
+        query:{
+          token: wx.getStorageSync('openid'),
+          type_id: this.typeIs
+        },
+        method:"POST"
+      });
+      if (rlt.data.code==0) {
+        this.isLoading = false
+        let listData = rlt.data.data.list
+        let orderList = await this.sleep(listData)
+        if(listData.length>0){ this.currentPage++ }
+        if(listData.length<20){ this.loadOnNoData = true }
+      }
+      this.$apply();
+    }
+    onReachBottom() {
+      console.log('触到底了？？')
+      if(!this.loadOnNoData){//没到底
+        this.isLoading =true
+        this.getCouponList()
+      }
+      this.$apply();
+    }
+  }
+</script>
+<style lang='less' scoped>
+page{
+  background: #f7f7f7;
+}
+.couponStyle {
+  background-color: #f7f7f7;
+  padding-top: 90rpx;
+}
+.money.useed{ color: #999; }
+.title.useed{ color: #999 !important; }
+.top{ align-items: center; }
+.selectImg{ width: 38rpx;height:38rpx; }
+.order_box{
+  background: #fff;
+  border-radius: 18rpx;
+  margin: 20rpx 20rpx 0 20rpx;
+  box-shadow: 0 2px 9px 0 rgba(0,0,0,.08);
+  .down_time{
+    padding: 0 30rpx;
+    border-bottom: 1rpx solid #eee;
+    display: flex;
+    align-items: center;
+    height: 88rpx;
+    text:first-child{
+      color: #666;
+      font-size: 26rpx;
+    }
+    text:last-child{
+      flex: 1;
+      justify-content: flex-end;
+      text-align: right;
+    }
+  }
+  .scroll_box{
+    padding: 20rpx 30rpx;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    image{
+      width: 128rpx;
+      height: 128rpx;
+    }
+    .contt{
+      font-size: 26rpx;
+      color: #333;
+      margin-left: 28rpx;
+      .guige{
+        color: #666;
+        margin-top: 40rpx;
+      }
+    }
+  }
+  .action_info{
+    padding: 0 30rpx;
+    display: flex;
+    align-items: center;
+    justify-content: left;
+    height: 100rpx;
+    border-top: 2rpx solid #eee;
+    text:first-child{
+      font-size: 26rpx;
+      color: #666;
+    }
+    text:last-child{
+      font-size: 26rpx;
+      color: #333;
+    }
+    .common_btn{
+      width: 154rpx;
+      height: 58rpx;
+      border: 1rpx solid #F6F6F6;
+      color:#666;
+      border-radius: 32rpx;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+}
+// 订单、优惠券
+.search_no{
+  text-align: center;
+  padding-top:48px;
+  .font_14{
+    padding-bottom: 30rpx;
+  }
+  text{
+    font-size: 28rpx;
+    color: #999;
+  }
+}
+</style>

@@ -1,0 +1,162 @@
+<template>
+  <view class="myContainer">
+    <view class="bigBox">
+      <view class="walletBox">
+        <view class="money"><span style="font-size:28rpx;">￥</span>{{deposit}}</view>
+        <view class="text">提成余额</view>
+      </view>
+    </view>
+    <view class="common_box" style="padding:38rpx;">
+      <view class="moneyBox">
+        <!-- <view class="childDiv">
+          <view style="text-align:center;">
+            <view class="money"><span style="font-size:26rpx;">￥</span>{{use_deposit}}</view>
+            <view class="title">全部</view>
+          </view>
+        </view> -->
+        <view class="childDiv">
+          <view style="text-align:center;">
+            <view class="money"><span style="font-size:26rpx;">￥</span>{{use_deposit}}</view>
+            <view class="title">已确认</view>
+          </view>
+        </view>
+        <view class="childDiv">
+          <view style="text-align:center;">
+            <view class="money"><span style="font-size:26rpx;">￥</span>{{freeze_deposit}}</view>
+            <view class="title">待确认</view>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view class="listBox">
+
+      <view class="list" wx:for="{{dataList}}" wx:key="{{index}}">
+        <view class="titleAndTile">
+          <view class="title">{{item.desc}}</view>
+          <view class="titme">{{item.create_time}}</view>
+        </view>
+        <view wx:if="{{item.inc_dec==1}}" class="moneyNumber">+{{item.fee}}</view>
+        <view wx:else class="moneyNumber active">-{{item.fee}}</view>
+      </view>
+
+    </view>
+    
+  </view>
+</template>
+<script>
+import wepy from 'wepy'
+import api from '@/api/api';
+export default class moneyCount extends wepy.page {
+  config = {
+    navigationBarTitleText: '提成统计'
+  }
+  data = {
+    hello: 'hello world',
+    dataList: [],
+    commomPage: 1,
+    deposit:'0.00',
+    use_deposit:'0.00',
+    freeze_deposit:'0.00',
+  }
+
+  async onLoad(options){
+    this.deposit = options.deposit
+    this.use_deposit = options.use_deposit
+    this.freeze_deposit = options.freeze_deposit
+
+    let Data = await api.getTeamRewardLog({
+      query:{
+        token: wx.getStorageSync('openid'),
+        page: this.commomPage
+      },
+      method:'POST'
+    });
+    if(!Data.data.code){
+      this.deposit = Data.data.data.all_fee
+      this.use_deposit = Data.data.data.use_fee
+      this.freeze_deposit = Data.data.data.freeze_fee
+      this.dataList = Data.data.data.list
+    }
+    this.$apply()
+    
+  }
+
+  methods = {
+    applyTuan(){
+      this.$navigate(`./applyTuan`);
+    }
+  }
+}
+</script>
+<style lang="less">
+.myContainer{
+  .bigBox{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 180rpx;
+    background: pink;
+    background-color: #fe4f63;
+    background: -moz-linear-gradient(top, #d91f54 0%, #fe4f63 50%);
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#d91f54), color-stop(50%,#fe4f63));
+    background: -webkit-linear-gradient(top, #d91f54 0%,#fe4f63 50%);
+    background: -o-linear-gradient(top, #d91f54 0%,#fe4f63 50%);
+    background: -ms-linear-gradient(top, #d91f54 0%,#fe4f63 50%);
+    background: linear-gradient(to bottom, #d91f54 0%,#fe4f63 50%);
+    color: #fff;
+    .walletBox{
+      font-size: 40rpx;
+      color: #fff;
+      text-align: center;
+      .text{ margin-top:12rpx;font-size: 32rpx; }
+    }
+  }
+  .common_box{
+    position: relative;
+    background-color: #FFF;
+    box-shadow: 0 2px 4px 0 rgba(0,0,0,.04);
+    .moneyBox{
+      display: flex;
+      flex-wrap:wrap;
+      .childDiv{
+        width: 50%;
+        height: 46rpx;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-right: 1rpx solid #eee;
+        box-sizing: border-box;
+        .money{ font-size: 30rpx;font-weight: bold; color: #333; }
+        .title{ font-size: 24rpx;color: #666; }
+      }
+      .childDiv:last-child{
+        border-right:0;
+      }
+    }
+  }
+  .listBox{
+    .list{
+      display: flex;
+      align-items: center;
+      font-size: 32rpx;
+      color: #333;
+      padding: 28rpx;
+      border-bottom: 1rpx solid #eee;
+      background: #fff;
+      .moneyNumber.active{ color:#1AAD16; }
+      .titleAndTile{
+        font-size: 26rpx;
+        flex: 1;
+        .titme{
+          margin-top: 6rpx;
+          font-size: 24rpx;
+          color:#999;
+        }
+      }
+    }
+    .list:last-child{
+      border-bottom: 0;
+    }
+  }
+}
+</style>

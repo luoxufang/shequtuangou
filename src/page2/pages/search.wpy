@@ -1,0 +1,535 @@
+<template>
+  <view class="searchBox">
+    <van-search
+      style="position:fixed;width:100%;top:0;"
+      value="{{ value }}"
+      placeholder="请输入要搜索的商品名称"
+      use-action-slot
+      bind:search="onSearch"
+      bind:change="bindChange"
+    >
+      <view slot="action" @tap="onSearchFn">搜索</view>
+    </van-search>
+
+    <view class="content">
+      <view class="list_box" wx:for="{{goodsList}}" wx:key="index" data-id="{{item.id}}" @tap="go_to_goodDetail({{item.id}})">
+        <view class="img_boxx">
+          <image mode="aspectFill" src="{{item.default_image}}" alt=""/>
+        </view>
+        <view class="shop_right_box">
+          <view class="title">{{item.title}}</view>
+          <view class="label">
+            <repeat wx:for="{{item.tags}}" wx:key="index">
+            <van-tag class="van-tag" round type="danger">{{item}}</van-tag>
+            </repeat>
+            <!-- <van-tag class="van-tag" round type="success">限购</van-tag> -->
+          </view>
+          <view class="format"><view>已售{{item.sold_quantity}} / 还剩{{item.store}}件</view></view>
+          <view class="money">
+            <view class="fuhao_box"><text class="fuhao">￥</text><text class="money">{{item.price}}</text><label>￥{{item.mkt_price}}</label></view>
+          </view>
+          <image class="cartImg" @tap.stop="onClickButton({{item.id}},{{item.item_sku_ret}},{{item.spec_desc}})" mode="aspectFill" src="../../assets/cart2.png"/>
+        </view>
+      </view>
+    </view>
+    <!-- 无数据 -->
+    <view class="defouldMo" wx:if="{{goodsList.length==0&&!inputValue}}">请搜索您要的商品</view>
+    <view class="defouldMo" wx:elif="{{goodsList.length==0&&inputValue}}">sorry您搜索的商品还在路上</view>
+
+    <!--TODO 滑出面板可以重构-->
+    <view class="goods-buy-panel-cover" catchtouchmove="myCatchTouch" @tap="close"  wx:if="{{display2}}"></view>
+    <!--购买面板-->
+    <view catchtouchmove="myCatchTouch" class="goods-buy-panel-container {{ display2 ? 'goods-buy-panel-show' : '' }}" >
+      <view class="tanchaung">
+        <view class="cont">
+          <image class="delete_img" @tap="close" mode="aspectFill" src="../../assets/images/del.png"/>
+          <view class="min_img"><image mode="aspectFill" src="https://api.118zc.com{{defaultImg}}"/></view>
+          <view class="right_proInfo">
+            <view class="title">{{detailInfo.sub_title}}</view>
+            <view class="fuhao_box">
+              <text class="fuhao">￥</text><text class="money">{{tempPrice}}</text>
+              <!-- <label>￥49.90</label> -->
+            </view>
+            <view wx:if="{{choosed_goods_no.length}}" class="choosed">请选择 
+            <repeat wx:for="{{choosed_goods_no}}" wx:key="{{index}}">
+              {{item}} </repeat>
+            </view>
+            <view wx:else  class="choosed">已选：
+              <repeat wx:for="{{choosed_goods}}" wx:key="{{index}}">
+                  “<text>{{item}}</text>”
+              </repeat>
+            </view>
+          </view>
+        </view>
+        <scroll-view style="height:480rpx;position:relative;" android:scrollbars="none" scroll-y="true" class="my_table_list scroll-view_H">
+          <view class="color_class" wx:for="{{spec_desc}}" wx:for-index="idx" wx:key="{{index}}">
+            <view class="title">{{item.prop_name}}</view>
+            <view class="color_list_box">
+              <repeat for="{{item.child}}" key="item">
+                <text wx:if="{{!item.flag}}" class="color_list {{item.active?'commonColor commonBorder' : ''}}" 
+                @tap="addVal({{idx}},{{item.prop_value_id}},{{item.prop_value_image}})" data-index="{{index}}">{{item.prop_value}}</text>
+                <!-- 置灰 -->
+                <text wx:if="{{item.flag}}" class="color_list default">{{item.prop_value}}</text>
+              </repeat>
+            </view>
+          </view>
+          <!-- 加减数量 -->
+          <view class="jiaAndJian">
+            <view class="txt">购买数量</view>
+            <view class="buy-num">
+              <view class="jian-btn {{quantity==1? 'disabled' : ''}}" catchtap="jianBtnTap" data-index="{{index}}" data-id="{{item.id}}">-</view>
+              <input type="number" value="{{quantity}}" disabled/>
+              <view class="jia-btn {{quantity==100? 'disabled' : ''}}" catchtap="jiaBtnTap" data-index="{{index}}" data-id="{{item.id}}">+</view>
+            </view>
+          </view>
+        </scroll-view>
+        <view wx:if="{{!bugNowBtn}}" class="add_cart_btn" @tap="join_cart()"><view class="colorBtn">确定</view></view>
+        <view wx:if="{{bugNowBtn}}" class="bug_now_btn" @tap="bug_now()"><view class="colorBtn">确定(立即)</view></view>
+      </view>
+    </view>
+
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import api from '@/api/api'
+  import tip from '@/utils/tip'
+  import aaa from '@/utils/aaa'
+  export default class search extends wepy.page {
+    config = {
+      navigationBarTitleText: '商品搜索',
+      usingComponents: {
+        "van-search": "/components/vant/search/index"
+      }
+    }
+    components = {}
+    data = {
+      inputValue: '',
+      value: '',
+      goodsList:[],
+
+      display2:false,
+      defaultImg:'',//重置
+      tempPrice:'0.00',//重置
+      choosed_goods:[],//重置
+      choosed_goods_no:['规格'],//重置
+      spec_desc:[],
+      quantity: 1,//商品数量
+      //选中的值，实始化时需要
+      item_sku_ret:[],
+      selectVal:[],
+      allData:{},
+      cacheData:{},
+      keysData:[],
+      skuVala:[],
+    }
+    onShow(){}
+    onLoad(){}
+    methods = {
+      onClickButton(options,item_sku_ret,spec_desc) {
+        this.options = options
+        this.defaultImg = '',//重置
+        this.tempPrice='0.00',//重置
+        this.choosed_goods=[],//重置
+        this.choosed_goods_no=['规格'],//重置
+        this.quantity = 1
+
+        this.spec_desc = spec_desc
+        this.item_sku_ret = item_sku_ret
+        if(spec_desc.length){//有规格的情况下
+          this.display2 = true
+          this.bugNowBtn=false
+        }else{//没有规格 this.infoVal++
+          this.join_cart_request(0)
+          return
+        }
+        this.$apply();
+
+        if(spec_desc.length){
+          this.defaultImg = this.spec_desc[0].child[0].prop_value_image
+          this.tempPrice = this.item_sku_ret[0].price
+          //spec_desc循环添加两个标记位
+          let spec_desc = this.spec_desc.map((item)=>{
+            item.child.map((item)=>{
+              item.flag = false
+              item.active = false
+              return item
+            })
+            return item
+          })
+          console.log(this.spec_desc)
+
+          //初始化数据
+          for(let i=0;i < this.item_sku_ret.length;i++){
+            let temp = '';
+            for(let j=0;j<this.item_sku_ret[i].spec_desc.length;j++){
+              temp = temp + this.item_sku_ret[i].spec_desc[j].value + ";"
+            }
+            temp = temp.slice(0, -1);
+            this.allData[temp] = {
+              price: this.item_sku_ret[i].price,
+              count:  this.item_sku_ret[i].store,
+            }
+          }
+          console.log(this.allData)
+
+          for(let i=0;i < this.spec_desc.length;i++){
+            // 记录选值
+            this.selectVal[i] = 0
+            let temp = []
+            for(let j=0; j<this.spec_desc[i].child.length;j++){
+              temp.push(this.spec_desc[i].child[j].prop_value_id)
+            }
+            this.keysData.push(temp)
+          }
+          console.log('keysData:'+this.keysData)
+
+          //初始化
+          this.initSku()
+          for(let i=0;i < this.spec_desc.length;i++){
+            for(let j=0; j<this.spec_desc[i].child.length;j++){
+              //禁点
+              // console.log(this.getNum(this.spec_desc[i].child[j].prop_value_id),'9999',this.spec_desc[i].child[j].prop_value_id)
+              if(aaa.getNum(this.spec_desc[i].child[j].prop_value_id, this.cacheData, this.keysData, this.allData) <= 0){
+                this.spec_desc[i].child[j].flag  = true
+                break;
+              }else{
+                this.spec_desc[i].child[j].flag  = false
+              }
+            }
+          }
+          
+          let skuVal = []
+          let skuVala = []
+          for(let i=0; i< this.item_sku_ret.length; i++){
+            skuVal=[]
+            for(let j=0; j< this.item_sku_ret[i].spec_desc.length; j++){
+              //skuVal[i].id = this.item_sku_ret[i].id
+              skuVal.push(this.item_sku_ret[i].spec_desc[j].value)
+            }
+            skuVal = skuVal.sort(function(a,b){
+              return a>b ? 1:-1
+            })
+            let bbb = skuVal.join(';')
+            skuVala[bbb] = this.item_sku_ret[i].id
+          }
+          this.skuVala = skuVala
+          console.log(skuVala)
+        }
+
+        this.$apply();
+      },
+      addVal(index,val, info){
+        console.log(index,val,info)
+        //替换默认图片
+        if(info){ this.defaultImg = info }
+        //改变颜色，及更改值
+        for(let i=0;i<this.spec_desc[index].child.length;i++){
+          if(val == this.spec_desc[index].child[i].prop_value_id){
+            if(this.spec_desc[index].child[i].active == true){
+              this.spec_desc[index].child[i].active = false
+              this.selectVal[index] = 0;
+            }else{
+              this.selectVal[index] = val;
+              this.spec_desc[index].child[i].active = true
+            }
+          }else{
+            this.spec_desc[index].child[i].active = false
+          }
+        }
+        //----------111111111111-------------
+        var tempPrice=[]
+        for(let i=0;i < this.selectVal.length;i++){
+          if(this.selectVal[i] > 0 ){
+            tempPrice.push(this.selectVal[i])
+          }
+        }
+        if(typeof(this.getPrice(tempPrice.join(';')).prices)!=='undefined'){
+          this.tempPrice = this.getPrice(tempPrice.join(';')).prices[0]
+        }
+        // console.log(this.getPrice(tempPrice.join(';')),9999877,this.selectVal)
+        //-----------111111111111-----------
+        for(let i=0;i < this.spec_desc.length;i++){
+          //跳过当前层
+          if(i == index){
+              continue;
+          }
+          let tempSelect = []
+          tempSelect =  this.selectVal.concat()
+          for(let j=0; j<this.spec_desc[i].child.length;j++){
+            //跳过已选择的
+            if(tempSelect[i]>0 && tempSelect[i] == this.spec_desc[i].child[j].prop_value_id){
+                continue;
+            }
+            //组合值判断,判断当前
+            tempSelect[i] = this.spec_desc[i].child[j].prop_value_id
+            //组合
+            let temp = []
+            for(let k=0;k < tempSelect.length;k++){
+              //剔除0值
+              if(tempSelect[k] !=0 ){
+                temp.push(tempSelect[k])
+              }
+            }
+            //排序，小到大,发现问题再排
+            //禁点
+            if(aaa.getNum(temp.join(';'), this.cacheData, this.keysData, this.allData) <= 0){
+              this.spec_desc[i].child[j].flag  = true
+            }else{
+              this.spec_desc[i].child[j].flag  = false
+            }
+          }
+        }
+        console.log(this.spec_desc,9999)
+        console.log(this.selectVal)
+        // spec_desc循环添加两个标记位
+        let pofice = []
+        let goods_yes = []
+        let allTitle = []
+        let choosedValue = this.spec_desc.map((item)=>{
+          item.child.map((item2)=>{
+            this.selectVal.map((index)=>{
+              if(item2.prop_value_id == index){
+                pofice.push(item2.prop_value)
+                goods_yes.push(item.prop_name)
+              }
+              return item2.prop_value
+            })
+          })
+          allTitle.push(item.prop_name)  //获取全部规格标题
+        })
+        console.log(goods_yes)
+        //处理标题
+        for(let i = 0; i < allTitle.length; i++) {
+          for(let j = 0; j < goods_yes.length; j++) {
+            if(allTitle[i] == goods_yes[j]){
+              allTitle.splice(i,1);
+            }
+          }
+        }
+        // console.log('处理后:'+allTitle)
+        this.choosed_goods = pofice
+        this.choosed_goods_no = allTitle
+      },
+      jianBtnTap(){
+        if(this.quantity<=1){ return }
+        this.quantity--
+      },
+      jiaBtnTap(){
+        if(this.quantity>100){ return }
+        this.quantity++
+      },
+      onSearch(event){
+        console.log(event.detail)
+        if(this.inputValue){
+          this.getItemList(this.inputValue)
+        }
+      },
+      onSearchFn(){
+        if(this.inputValue){
+          console.log(this.inputValue)
+          this.getItemList(this.inputValue)
+        }
+      },
+      bindChange(event){
+        this.inputValue = event.detail
+        this.$apply();
+      },
+      async go_to_goodDetail(id){
+        wx.navigateTo({url: `../../pages/goodDetail?sourcePage=${id}`})
+      }
+    }
+    //----------------------------------初始化组合------------------------------------
+    initSku(){
+      let i, j, skuKeys = aaa.getObjKeys(this.allData);
+      for(i = 0; i < skuKeys.length; i++) {
+        var skuKey = skuKeys[i];//一条SKU信息key
+        var sku = this.allData[skuKey]; //一条SKU信息value
+        var skuKeyAttrs = skuKey.split(";"); //SKU信息key属性值数组
+        var len = skuKeyAttrs.length;
+        //对每个SKU信息key属性值进行拆分组合
+        var combArr = aaa.arrayCombine(skuKeyAttrs);
+        for(j = 0; j < combArr.length; j++) {
+            this.add2SKUResult(combArr[j], sku);
+        }
+        //结果集接放入SKUResult
+        this.cacheData[skuKey] = {
+            count:sku.count,
+            prices:[sku.price]
+        }
+      }
+      this.$apply()
+    }
+    //把组合的key放入结果集SKUResult ***********
+    add2SKUResult(combArrItem, sku) {
+        var key = combArrItem.join(";");
+        if(this.cacheData[key]) {//SKU信息key属性·
+            this.cacheData[key].count += sku.count;
+            this.cacheData[key].prices.push(sku.price);
+        } else {
+            this.cacheData[key] = {
+                count : sku.count,
+                prices : [sku.price]
+            };
+        }
+        this.$apply()
+    }
+
+    getPrice(key) {
+      //检查是否已计算过
+      if (typeof this.cacheData[key] != 'undefined') {
+          return this.cacheData[key];
+      }
+      return '0.00'
+    }
+    //加入购物车 判断
+    join_cart(){
+      if(this.choosed_goods.length !== this.spec_desc.length){
+        tip.toast('请选择商品属性')
+      }else{
+        let selectVal = this.selectVal.sort(function(a,b){
+          return a>b ? 1:-1
+        })
+        console.log(selectVal)
+        //获取sku_id
+        console.log('sku_id:'+this.skuVala[this.selectVal.join(";")])
+        this.join_cart_request(this.skuVala[this.selectVal.join(";")])
+      }
+    }
+    //加入购物车 请求
+    async join_cart_request(sku_id){
+      let result = await api.addCart({
+        query:{ 
+          token: wx.getStorageSync('openid'),
+          item_id: this.options,
+          quantity: this.quantity,
+          sku_id: sku_id,
+          is_checked: 1
+        },
+        method:"POST"
+      });
+      if(!result.data.code){
+        console.log(result.data.msg)
+        this.close()
+        const cba = await this.$parent.changeCartNumber()
+        tip.toast('加入购物车成功')
+      }else{
+        tip.toast(result.data.msg)
+      }
+      this.$apply();
+    }
+    close () { this.display2 = false; }
+    //----------------------------------初始化组合 结束------------------------------------
+
+    async getItemList(title) {
+      const result = await api.getItemList({
+        query:{
+          token: wx.getStorageSync('openid'),
+          cat:'',
+          title: title,
+          is_advance_sale:'',
+          tag:''
+        }
+      });
+      if(!result.data.code){
+        this.goodsList = result.data.data.list
+        this.statisticsStore(result.data.data.itemStat)
+        this.$apply();
+      }
+    }
+    async statisticsStore(itemStat){
+      const result = await api.statisticsStore({
+        query:{
+          token: wx.getStorageSync('openid'),
+          itemStat: itemStat?itemStat:''
+        },
+        method:"POST",
+        noloading:1
+      })
+      if(!result.data.code){ console.log(result.data.msg) }
+    }
+  }
+</script>
+<style lang='less' scoped>
+@import '../../utils/style.less';
+page{
+  background: #fff;
+}
+.searchBox{
+  height: 100%;
+  padding-top: 88rpx;
+  box-sizing: border-box;
+  .content{
+    padding: 20rpx 20rpx 0;
+    .list_box{
+      padding: 18rpx;
+      display: flex;
+      background-color: #fff;
+      border-radius: 8rpx;
+      margin-bottom: 18rpx;
+      box-shadow:0 2px 10px 2rpx rgba(0, 0, 0, 0.08);
+      .img_boxx{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        image{
+          width: 200rpx;
+          height: 200rpx;
+          border-radius: 8rpx;
+        }
+      }
+      .shop_right_box{
+        flex: 1;
+        margin-left: 20rpx;
+        font-size: 28rpx;
+        position:relative;
+        .title{
+          font-weight: 600;
+          font-size: 30rpx;
+          color: #333;
+          overflow:hidden;
+          word-break:break-all;
+          display:-webkit-box;
+          -webkit-line-clamp:2;
+          -webkit-box-orient:vertical;
+        }
+        .label{
+          padding: 8rpx 0;
+        }
+        .format{
+          font-size: 24rpx;
+          color: #666;
+          display: flex;
+          view{
+            padding: 6rpx 8rpx;
+            border: 1rpx solid #eee;
+            border-radius: 32rpx;
+          }
+        }
+        .money{
+          .fuhao_box{
+            color: #FF6356;
+            .fuhao{ font-size: 20rpx;}
+            .money{ font-size: 40rpx;}
+            label{ font-size: 28rpx;text-decoration:line-through;margin-left: 12rpx;color: #999;}
+          }
+        }
+        .cartImg{
+          width:58rpx;
+          height:58rpx;
+          position: absolute;
+          bottom: 12rpx;
+          right: 24rpx;
+        }
+      }
+    }
+  }
+  .defouldMo{
+    font-size: 26rpx;
+    color: #666;
+    text-align: center;
+    line-height: 100rpx;
+  }
+}
+</style>

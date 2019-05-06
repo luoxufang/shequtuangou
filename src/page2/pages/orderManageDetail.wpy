@@ -1,0 +1,311 @@
+<template>
+  <view class="orderDetail">
+    <view class="bgc">
+      <view wx:if="{{dataInfo.info.trade_status==0}}">
+        <view class="txt">待付款</view>
+        <view style="font-size:24rpx;color:#fff;margin-top:8rpx;">10分钟后自动取消该订单</view>
+      </view>
+      <view wx:elif="{{dataInfo.info.trade_status==1}}"><view class="txt">待配送</view></view>
+      <view wx:elif="{{dataInfo.info.trade_status==2}}"><view class="txt">配送中</view></view>
+      <view wx:elif="{{dataInfo.info.trade_status==3}}"><view class="txt">待提货</view></view>
+      <view wx:elif="{{dataInfo.info.trade_status==4}}"><view class="txt">已完成</view></view>
+      <view wx:elif="{{dataInfo.info.trade_status==5}}"><view class="txt">已关闭</view></view>
+    </view>
+
+    <view class="good_cont">
+      <!-- 提货信息 -->
+      <view class="commonStyle goods_activity_boxx">
+        <view class="modular">
+          <view class="now_time aaa">提货信息</view>
+          <view></view>
+        </view>
+        <view class="modular">
+          <view style="width:100%;">
+            <view class="orderInfo"><text style="width:110rpx;">提货人</text><span>{{dataInfo.userInfo.nickname}}</span></view>
+            <view class="orderInfo"><text style="width:110rpx;">提货信息</text><span>{{dataInfo.teamInfo.address}}</span></view>
+            <view class="orderInfo"><text  style="width:110rpx;">团长信息</text><span>{{dataInfo.teamInfo.realname}}</span></view>
+          </view>
+        </view>
+      </view>
+      <!-- 成功 -->
+      <view class="commonStyle goods_boxx">
+        <view class="modular">
+          <view wx:if="{{dataInfo.info.trade_status==0}}" class="now_time">预计01月11日(周五)可自提</view>
+          <view wx:elif="{{dataInfo.info.trade_status==1}}" class="now_time">备货中</view>
+          <view wx:elif="{{dataInfo.info.trade_status==5}}" class="now_time">已取消</view>
+          <view wx:else class="now_time"></view>
+          <view>{{goodNumber}}件商品</view>
+        </view>
+        <view class="orderGoodsList" wx:for="{{dataInfo.list}}" wx:key="{{index}}">
+          <image style="width:120rpx;height:120rpx;" mode="aspectFill" src="https://api.118zc.com{{item.default_image}}"/>
+          <view class="info_good">
+            <view class="title">{{item.title}}</view>
+            <view class="number">数量：{{item.num}} <text wx:if="{{item.sku_spec_info}}">规格：{{item.sku_spec_info}}</text></view>
+            <view class="money">￥{{item.price}}</view>
+            <view class="now_money">实付金额：<text>￥{{item.total_fee}}</text></view>
+          </view>
+        </view>
+        
+      </view>
+
+      <view class="commonStyle goods_activity_boxx">
+        <view class="modular">
+          <view class="now_time aaa">订单信息</view>
+          <view></view>
+        </view>
+        <view class="modular">
+          <view style="width:100%;">
+            <view class="orderInfo"><text style="width:110rpx;">订单编号</text><span>{{dataInfo.info.trade_bn}}</span></view>
+            <view class="orderInfo"><text style="width:110rpx;">下单时间</text><span>{{dataInfo.info.create_time}}</span></view>
+            <view class="orderInfo"><text style="width:110rpx;">商品优惠</text><span>￥{{dataInfo.info.discount_fee}}</span></view>
+            <view class="orderInfo"><text style="width:110rpx;">买家留言</text><span>{{dataInfo.info.buyer_remarks}}</span></view>
+          </view>
+        </view>
+        <view class="modular">
+          <view class="now_time aaa"></view>
+          <view>合计：<span style="color:red;">￥{{dataInfo.info.total_fee}}</span></view>
+        </view>
+      </view>
+
+      <view class="commonStyle goods_activity_boxx" wx:if="{{dataInfo.info.trade_status==0}}">
+        <view class="modular">
+          <view class="now_time aaa">余额支付</view>
+          <switch checked="{{checked2}}" bindchange="switch2Change" color="#fbc004"/>
+        </view>
+      </view>
+
+    </view>
+
+    <view class="btn_pay_box" wx:if="{{dataInfo.info.trade_status==0}}">
+      <view class="left_">取消订单</view>
+      <view class="right_" @tap="toPay">去付款</view>
+    </view>
+  </view>
+</template>
+<script>
+import wepy from 'wepy'
+import api from '@/api/api'
+import tip from '@/utils/tip'
+export default class orderManageDetail extends wepy.page {
+  config = {
+    navigationBarTitleText: '团队订单详情'
+  }
+  data = {
+    dataInfo:{},
+    options:'',
+    payType: 1,
+    checked2: false,
+    checked: false,
+    yes_or_no: true,
+    goodNumber: 0
+  }
+  onLoad(options){
+    console.log(options)
+    this.options = options.id
+    this.getTradeDetail()
+  }
+  methods = {
+    switch2Change(e){
+      console.log('switch1 发生 change 事件，携带值为', e.detail.value)
+      this.checked2 = e.detail.value
+      if(e.detail.value){
+        this.payType = 0
+      }else{
+        this.payType = 1
+      }
+    }
+
+  }
+  async getTradeDetail(){
+    let result = await api.getTeamTradeDetail({
+      query:{ 
+        token:wx.getStorageSync('openid'), 
+        id:this.options
+      },
+      method:'POST'
+    });
+
+    if(!result.data.code){
+      this.dataInfo = result.data.data
+      
+      let num = 0;
+      for(let i=0; i<result.data.data.list.length; i++){
+        num = num + parseInt(result.data.data.list[i].num)
+      }
+      this.goodNumber = num
+    }
+
+    this.$apply();
+  }
+// 11111111111111111111111111111111111111111111
+  async toPay(tid){
+    let result = await api.doPay({
+      query:{
+        token: wx.getStorageSync('openid'),
+        tid: this.options,
+        type_id: this.payType
+      },
+      method:'POST'
+    });
+    if(!result.data.code){
+      console.log(result.data.data.info)
+      if(this.payType==0){
+        wx.showToast({
+          title: '支付成功',
+          icon: 'success',
+          duration: 1000
+        });
+        setTimeout(function () {
+          this.$navigate(`./myOrder?id=0`);
+        }, 1000)
+      }else{
+        let $data = result.data.data.info
+        wx.requestPayment({
+          timeStamp: $data.timeStamp,
+          nonceStr: $data.nonceStr,
+          package: $data.package,
+          signType: $data.signType,
+          paySign: $data.paySign,
+          success (res) {
+            wx.showToast({
+              title: '支付成功',
+              icon: 'success',
+              duration: 600
+            });
+            setTimeout(function () {
+              wx.navigateTo({
+                url: "./myOrder?id=2"
+              })
+            }, 800)
+          },
+          fail (res) {
+            wx.showLoading({ title: '已取消支付' })
+            setTimeout(function () {
+              wx.hideLoading()
+              wx.navigateTo({
+                url: "./myOrder?id=1"
+              })
+            }, 800)
+          }
+        })
+      }
+    }else{
+      tip.toast(result.data.msg)
+    }
+    this.$apply();//用wepy.navigateTo必须
+  }
+}
+</script>
+<style lang="less" scoped>
+switch{ zoom: .5; }
+.orderDetail{
+  .bgc{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 200rpx;
+    background-color: #d91f54;
+    background: -moz-linear-gradient(top, #d91f54 0%, #fe4f63 100%);
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#d91f54), color-stop(100%,#fe4f63));
+    background: -webkit-linear-gradient(top, #d91f54 0%,#fe4f63 100%);
+    background: -o-linear-gradient(top, #d91f54 0%,#fe4f63 100%);
+    background: -ms-linear-gradient(top, #d91f54 0%,#fe4f63 100%);
+    background: linear-gradient(to bottom, #d91f54 0%,#fe4f63 100%);
+    .txt{
+      font-size: 38rpx;
+      color:#fff;
+      text-align: center;
+    }
+  }
+  background: #F6F6F6;
+  .orderInfo{
+    font-size: 26rpx;
+    color:#999;
+    text{
+      display: inline-block;
+    }
+    span{
+      color:#333;
+      margin-left: 20rpx;
+    }
+  }
+  .good_cont{
+    padding: 24rpx 24rpx 100rpx 24rpx;
+    .commonStyle{
+      border-radius: 16rpx;
+      background-color: #fff;
+      box-shadow: 0 2px 9px 0 rgba(0,0,0,.04);
+      overflow: hidden;
+      margin-bottom: 20rpx;
+      .modular{
+        display: flex;
+        padding: 30rpx;
+        font-size: 26rpx;
+        color: #999;
+        border-bottom: 1rpx solid #f6f6f6;
+        .now_time{flex: 1;}
+        .now_time.aaa{
+          font-size: 28rpx;
+          color: #333;
+        }
+      }
+      .orderGoodsList{
+        display: flex;
+        align-items: center;
+        padding: 20rpx 30rpx;
+        border-bottom: 1rpx solid #f6f6f6;
+        position: relative;
+        .info_good{
+          padding-left: 24rpx;
+          font-size:26rpx;
+          color: #999;
+          .title{font-size: 30rpx;color: #333;}
+          .now_money{color: #333;text{font-size: 30rpx;color: #FF6356;}}
+        }
+        .absoluteBtn{
+          width: 126rpx;
+          height: 40rpx;
+          position: absolute;
+          bottom: 30rpx;
+          right: 28rpx;
+          border-radius: 34rpx;
+          color: #666;
+          border: 1rpx solid #eee;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size:24rpx;
+        }
+      }
+      .orderGoodsList:last-child{
+        border-bottom:0;
+      }
+    }
+  }
+  .btn_pay_box{
+    width: 100%;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    height: 100rpx;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    text-align: center;
+    .left_{
+      width: 50%;
+      color: #666;
+      background: #fff;
+    }
+    .right_{
+      width: 50%;
+      line-height: 100rpx;
+      text-align: center;
+      height: 100%;
+      background-color: #FF6356;
+      color: #fff;
+      font-size: 30rpx;
+    }
+  }
+}
+</style>

@@ -1,0 +1,343 @@
+<template>
+  <view class="orderDetail">
+    <view class="send_out_info">
+      <view class="input_boxx">
+        <text style="font-size:30rpx;color:#333;">收货人：</text>
+        <input value="{{dataInfo.userInfo.nickname}}" class="input1" maxlength="10" placeholder="微信昵称" />
+        <input type="number" value="{{myMobile}}" bindinput="bindChange" maxlength="11" placeholder="手机号码" />
+      </view>
+      <view class="send_address">提货地点：{{dataInfo.teamInfo.address}}</view>
+      <view class="send_name">团长信息：{{dataInfo.teamInfo.realname}}</view>
+    </view>
+    <view style="width:100%;height:8rpx;font-size:0;">  
+      <image class="" src="../assets/images/aa.png" style="width:100%;height:100%;"/>
+    </view>
+
+    <view class="good_cont">
+      <view class="commonStyle goods_boxx">
+        <view class="modular"><view class="now_time">预计 {{showTime}} 可自提</view><view>{{goodNumber}}件商品</view></view>
+        
+        <view class="orderGoodsList" wx:for="{{dataInfo.list}}" wx:key="{{index}}">
+          <image style="width:120rpx;height:120rpx;" mode="aspectFill" src="https://api.118zc.com{{item.default_image}}"/>
+          <view class="info_good">
+            <view class="title">{{item.title}}</view>
+            <view class="number">数量：{{item.quantity}} <text wx:if="{{item.spec_info}}">规格：{{item.spec_info}}</text></view>
+            <view class="money">￥{{item.price}}</view>
+            <view class="now_money">实付金额：<text>￥{{item.aaa}}</text></view>
+          </view>
+        </view>
+      </view>
+
+      <view class="commonStyle goods_activity_boxx">
+        <!-- <view class="modular"><view class="now_time aaa">商品活动</view><view>-￥0.00</view></view>
+        <view class="modular"><view class="now_time aaa">社区活动</view><view>-￥0.00</view></view> -->
+        <view class="modular" @tap="go_to_coupon">
+          <view class="now_time aaa">优惠券优惠</view>
+          <view wx:if="{{dataInfo.couponInfo.use_coupon==null}}">-￥{{dataInfo.couponInfo.use_coupon.coupon_money}}</view>
+          <view wx:else>
+            <view wx:if="{{dataInfo.couponInfo.useCouponIds.length==0}}">0 张可用</view>
+            <view wx:else style="color:red;">{{dataInfo.couponInfo.useCouponIds.length}} 张可用</view>
+          </view>
+          <image src="../assets/images/right.png" style="width:7px;height:24rpx;margin-left:22rpx;"/>
+        </view>
+        <!-- <view class="modular" wx:if="{{dataInfo.userPoint.point_count>0}}">
+          <view class="now_time aaa">当前可用{{dataInfo.userPoint.point_count}}积分抵扣{{dataInfo.userPoint.use_point_amount}}元</view>
+          <switch bindchange="switch1Change" color="#fbc004" />
+        </view>
+        <view class="modular" wx:else>
+          <view class="now_time aaa">当前可用积分0抵扣</view>
+          <switch disabled="true" checked="{{checked}}" bindchange="switch1Change" color="#fbc004" />
+        </view> -->
+
+        <view class="modular">
+          <view class="now_time aaa">余额支付</view>
+          <switch checked="{{checked2}}" bindchange="switch2Change" color="#fbc004"/>
+        </view>
+      </view>
+    </view>
+    <view class="btn_pay_box">
+      <view class="left_">
+        <view class="actual_payment">合计：<text>￥{{dataInfo.couponPrice}}</text></view>
+        <view class="total">总额: ￥{{dataInfo.totalPrice}}<text style="margin-left:20rpx;">优惠: ￥{{dataInfo.couponMoney}}</text></view>
+      </view>
+      <view class="right_" @tap="go_to_settlement">结算</view>
+    </view>
+  </view>
+</template>
+<script>
+import wepy from 'wepy'
+import api from '@/api/api';
+import tip from '@/utils/tip'
+export default class orderDetail extends wepy.page {
+  config = {
+    navigationBarTitleText: '订单确认'
+  }
+  data = {
+    dataInfo:{},
+    options:'',
+    payType: 1,
+    checked: false,
+    checked2: false,
+    goodNumber: 0,
+    showTime: "",
+    coupon_id: "",
+    quantity: 1,
+    myMobile:''
+  }
+  onShow(){
+    console.log(wx.getStorageSync('currentCouponId'))
+    if(wx.getStorageSync('currentCouponId')||wx.getStorageSync('currentCouponId')==0){
+      this.coupon_id = wx.getStorageSync('currentCouponId')
+      this.bug_now_request()
+    }
+  }
+  onLoad(options){
+    console.log(options)
+    this.options = options.id
+    this.sku_id = options.sku_id
+    this.quantity = options.quantity
+
+    this.bug_now_request()
+    //时间
+    let myDate = new Date();
+    let showTime = (myDate.getMonth()+1) +'月'+ (myDate.getDate()+1) +'日'
+    this.showTime = showTime
+    this.$apply();
+  }
+  methods = {
+    bindChange(event){
+      this.myMobile = event.detail.value
+    },
+    switch1Change(e){
+      this.checked = e.detail.value
+      console.log(checked)
+    },
+    switch2Change(e){
+      this.checked2 = e.detail.value
+      if(e.detail.value){
+        this.payType = 0
+      }else{
+        this.payType = 1
+      }
+    },
+    go_to_coupon(){
+      wx.navigateTo({url: `./couponChoose`})
+      wx.setStorageSync('useCouponIds', this.dataInfo.couponInfo.useCouponIds)
+    }
+  }
+  async bug_now_request(){
+    let result = await api.getExpectedTradeDetail({
+      query:{ 
+        token: wx.getStorageSync('openid'), 
+        item_id: this.options, 
+        coupon_id: this.coupon_id, 
+        sku_id: this.sku_id,
+        quantity: this.quantity
+      },
+    });
+    if(!result.data.code){
+      console.log(result.data.data)
+      let num = 0;
+      for(let i=0; i<result.data.data.list.length; i++){
+        num = num + parseInt(result.data.data.list[i].quantity)
+        result.data.data.list[i].aaa = (result.data.data.list[i].price * result.data.data.list[i].quantity).toFixed(2)
+      }
+      let typeIs = result.data.data.couponInfo.use_coupon
+      if(JSON.stringify(typeIs)!=='[]'){
+        this.coupon_id = result.data.data.couponInfo.use_coupon.id
+        wx.setStorageSync('currentCouponId', result.data.data.couponInfo.use_coupon.id)
+      }
+      this.dataInfo = result.data.data
+      this.goodNumber = num
+    }
+    this.$apply();
+  }
+  onUnload() {
+    wx.setStorageSync('currentCouponId', '')
+  }
+
+  async go_to_settlement(){
+    var RegExp = /^((0\d{2,3}-\d{7,8})|(1[3584]\d{9}))$/;
+    if(!this.myMobile){
+      tip.toast('请填写手机号码，方便联系您')
+      return
+    }else if(!RegExp.test(this.myMobile)){
+      tip.toast('请正确填写号码')
+      return
+    }
+    let result = await api.doOrder({
+      query:{ 
+        token:wx.getStorageSync('openid'), 
+        item_id:this.options, 
+        coupon_id: this.coupon_id, 
+        sku_id: this.sku_id,
+        quantity: this.dataInfo.list[0].quantity,
+        pay_type: this.payType,
+        buyer_remarks:'空',
+        nickname:this.dataInfo.userInfo.nickname,
+        mobile: this.myMobile,
+        use_point: this.checked ? this.dataInfo.userPoint.use_point_amount : ''
+      },
+      method:'POST'
+    });
+    if(!result.data.code){
+      console.log(result.data.msg)
+      //调支付请求
+      this.toPay(result.data.data.tid)
+    }else{
+      tip.toast(result.data.msg)
+    }
+  }
+
+  async toPay(tid){
+    let result = await api.doPay({
+      query:{
+        token: wx.getStorageSync('openid'),
+        tid: tid,
+        type_id: this.payType
+      },
+      method:'POST'
+    });
+    if(!result.data.code){
+      console.log(result.data.data.info)
+      if(this.payType==0){
+        wx.showToast({
+          title: '支付成功',
+          icon: 'success',
+          duration: 1000
+        });
+        setTimeout(function () {
+          wx.navigateTo({ url:`./myOrder?id=2&jiesuan=jiesuan` });
+        }, 1000)
+      }else{
+        let $data = result.data.data.info
+        wx.requestPayment({
+          timeStamp: $data.timeStamp,
+          nonceStr: $data.nonceStr,
+          package: $data.package,
+          signType: $data.signType,
+          paySign: $data.paySign,
+          success (res) {
+            wx.showToast({
+              title: '支付成功',
+              icon: 'success',
+              duration: 600
+            });
+            setTimeout(function () {
+              wx.navigateTo({
+                url: "./myOrder?id=2&jiesuan=jiesuan"
+              })
+            }, 800)
+          },
+          fail (res) {
+            wx.showLoading({ title: '已取消支付' })
+            setTimeout(function () {
+              wx.hideLoading()
+              wx.navigateTo({
+                url: `./orderDetail?id=${tid}`
+              })
+            }, 800)
+          }
+        })
+      }
+    }else{
+      tip.toast(result.data.msg)
+    }
+    this.$apply();//用wepy.navigateTo必须
+  }
+}
+</script>
+<style lang="less" scoped>
+switch{
+  zoom: .5;
+}
+.orderDetail{
+  background: #F6F6F6;
+  .send_out_info{
+    padding: 20rpx;
+    background: #fff;
+    .input_boxx{
+      display: flex;
+      align-items: center;
+      padding-bottom: 20rpx;
+      input{
+        border: 1rpx solid #ccc;
+        padding-left: 8rpx;
+        padding-right: 8rpx;
+      }
+      .input1{
+        width: 158rpx;
+        margin-right: 20rpx;
+      }
+    }
+    .send_address,.send_name{
+      font-size: 26rpx;
+      color: #666;
+    }
+  }
+  .good_cont{
+    padding: 24rpx 24rpx 100rpx 24rpx;
+    .commonStyle{
+      border-radius: 16rpx;
+      background-color: #fff;
+      box-shadow: 0 2px 9px 0 rgba(0,0,0,.04);
+      overflow: hidden;
+      margin-bottom: 20rpx;
+      .modular{
+        display: flex;
+        align-items: center;
+        padding: 30rpx;
+        font-size: 26rpx;
+        color: #999;
+        border-bottom: 1rpx solid #f6f6f6;
+        .now_time{flex: 1;}
+        .now_time.aaa{
+          font-size: 28rpx;
+          color: #333;
+        }
+      }
+      .orderGoodsList{
+        display: flex;
+        align-items: center;
+        padding: 20rpx 30rpx;
+        border-bottom: 1rpx solid #f6f6f6;
+        .info_good{
+          padding-left: 24rpx;
+          font-size:26rpx;
+          color: #999;
+          .title{font-size: 30rpx;color: #333;}
+          .now_money{color: #333;text{font-size: 30rpx;color: #FF6356;}}
+        }
+      }
+      .orderGoodsList:last-child{
+        border-bottom:0;
+      }
+    }
+  }
+  .btn_pay_box{
+    width: 100%;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    height: 100rpx;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    .left_{
+      flex: 1;
+      padding: 0 24rpx;
+      .actual_payment{font-size:30rpx;color: #333; text{color: #FF6356; }}
+      .total{color:#666;}
+    }
+    .right_{
+      width: 260rpx;
+      line-height: 100rpx;
+      text-align: center;
+      height: 100%;
+      background-color: #FF6356;
+      color: #fff;
+      font-size: 30rpx;
+    }
+  }
+}
+</style>

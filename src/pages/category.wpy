@@ -1,0 +1,317 @@
+<template>
+  <view class="search" @tap="tosearch">
+    <view class="ser">
+      <text class="icon"></text>
+      <text>商品搜索</text>
+    </view>
+  </view>
+  <view class="category">
+    <view class="content">
+      <view class="left">
+        <repeat for="{{listData}}" index="index" item="item">
+        <view @tap="selectitem({{item.id}})" class="{{item.id == nowIndex ? 'active':'iconText'}}">
+          <view class="text">{{item.label}}</view>
+        </view>
+        </repeat>
+      </view>
+
+      <view class="right">
+        <view class="defaultTxt" wx:if="{{defaultTxt}}">该分类下无子分类</view>
+        <!-- <view class="banner">
+          <image mode="aspectFill" src="{{detailData.banner_url}}" alt=""/>
+        </view> -->
+        <view style="display:{{item.id == nowIndex ? 'block':'none'}}" wx:for="{{listData}}" wx:key="{{index}}">
+          <view class="" wx:for="{{item.children}}" wx:key="{{index}}" @tap="navigateToBPage({{item.id}})">
+            <view class="title">
+              <text>—</text>
+              <text>{{item.label}}</text>
+              <text>—</text>
+            </view>
+            <view class="bottom">
+              <repeat for="{{item.children}}">
+                <view @tap="categoryList({{item.id}})" class="item">
+                  <image mode="aspectFill" src="https://api.118zc.com{{item.logo}}" alt=""/>
+                  <text>{{item.label}}</text>
+                </view>
+              </repeat>
+            </view>
+
+          </view>
+        </view>
+
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import api from '@/api/api';
+  import tip from '@/utils/tip'
+  export default class Index extends wepy.page {
+    config = {
+      navigationBarTitleText: '分类'
+    }
+    components = {}
+    data = {
+      id: "1005000",
+      nowIndex: '',
+      listData: [],
+      detailData: {},
+      secondId:'',
+      classId:'',
+      threeClassId:'',
+      defaultTxt:false
+    }
+    onHide(){
+
+    }
+    onShow(){
+      //获取所以列表数据
+      this.allCategory();
+    }
+    onLoad() {
+      let that = this;
+      let classId = wx.getStorageSync('currentClassId')
+    }
+    methods = {
+      // 'preload' 自己命名一个想要的有意义的变量名就好
+      //  preloadData 数据格式，根据自己需求定义
+      async navigateToBPage(id) {
+        // const data = await api.getBrothersNode({query:{ id:id }});
+        // if(data.data){
+        //   this.$preload('preload', data.data) //先
+        // }
+        this.threeClassId = id
+      },
+      async categoryList(id) {
+        setTimeout(() => {
+          wepy.navigateTo({
+            url: `./categorylsit?sourcePage=${id}&classId=${this.threeClassId}`
+          });//后
+        }, 200)
+        // const data = await api.getItemList({
+        //   query:{ 
+        //     cat:id,
+        //     title:'',
+        //     is_advance_sale:'',
+        //     tag:''
+        //   }
+        // });
+        // if(data.data){
+        //   this.$preload('preload2', data.data) //先
+        // }
+      },
+      tosearch() {
+        wx.navigateTo({ url: "../page2/pages/search" });
+      },
+      selectitem(id) {
+        console.log(id)
+        this.nowIndex = id
+        this.$parent.globalData.currentClassId = id
+        this.listData.forEach(item => {
+          if(item.id==id){
+            if(item.children.length==0){
+              this.defaultTxt =true
+            }else{
+              this.defaultTxt =false
+            }
+          }
+        });
+        this.$apply();
+      }
+    }
+    selectitem2(id) {
+      console.log('id:'+id)
+      this.nowIndex = id;
+      this.listData.forEach(item => {
+        if(item.id==id){
+          if(item.children.length==0){
+            this.defaultTxt =true
+          }else{
+            this.defaultTxt =false
+          }
+        }
+      });
+      this.$apply();
+    }
+    
+    async allCategory() {
+      let rlt = await api.allCategory({ 
+        query:{
+          token: wx.getStorageSync('openid')
+        }
+      });
+      if (!rlt.data.code) {
+        let result = rlt.data.data;
+        this.listData = result;
+        if(this.$parent.globalData.currentClassId){
+          this.selectitem2(this.$parent.globalData.currentClassId)
+        }else{
+          this.nowIndex = rlt.data.data[0].id
+          if(rlt.data.data[0].children.length==0){
+            this.defaultTxt =true
+          }
+        }
+        this.$apply();
+
+      }else{
+        tip.alert(rlt.data.msg)
+      } 
+    }
+
+  }
+</script>
+<style lang='less' scoped>
+// @import "./style";
+page{
+  background: #fff;
+}
+.search {
+  width: 100%;
+  position:fixed;
+  top: 0;
+  height: 88rpx;
+  padding: 0 30rpx;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  border-bottom: 1rpx solid #efefef;
+  z-index:1;
+  .ser {
+    width: 690rpx;
+    height: 56rpx;
+    background: #efefef;
+    border-radius: 8rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text {
+      display: inline-block;
+      font-size: 26rpx;
+      color: #666;
+    }
+    .icon {
+      background: url('http://yanxuan.nosdn.127.net/hxm/yanxuan-wap/p/20161201/style/img/icon-normal/search2-2fb94833aa.png') center no-repeat;
+      background-size: 100%;
+      width: 28rpx;
+      height: 28rpx;
+      margin-right: 10rpx;
+    }
+  }
+}
+.category {
+  width: 100%;
+  height: 100%;
+  // display: flex;
+  // flex-direction: column;
+  padding-top: 88rpx;
+  box-sizing: border-box;
+  overflow: hidden;
+  .content {
+    height: 100%;
+    background: #fff;
+    // display: flex;
+    padding-left: 166rpx;
+    .left {
+      width: 162rpx;
+      position: fixed;
+      left: 0;
+      top: 80rpx;
+      height: 100%;
+      text-align: center;
+      overflow-y: auto;
+      background-color: #f8f8f8;
+      .iconText {
+        text-align: center;
+        line-height: 90rpx;
+        width: 100%;
+        height: 90rpx;
+        color: #333;
+        font-size: 28rpx;
+        box-sizing: border-box;
+        position: relative;
+      }
+      .active {
+        text-align: center;
+        line-height: 90rpx;
+        width: 100%;
+        height: 90rpx;
+        font-size: 28rpx;
+        box-sizing: border-box;
+        position: relative;
+        color: #ab2b2b;
+        background-color: #fff;
+      }
+      .active .text:before {
+        content: '';
+        position: absolute;
+        width: 8rpx;
+        height: 40rpx;
+        background-color: #fa453c;
+        left: 0;
+        top: 0;
+        margin-top: 25rpx;
+      }
+      
+    }
+    .right {
+      // flex: 1;
+      // border-left: 1rpx solid #fafafa;
+      height: 100%;
+      padding: 0 30rpx 0 30rpx;
+      overflow-y: auto;
+      box-sizing: border-box;
+      .defaultTxt{
+        text-align: center;
+        color:#666;
+        margin-top: 30rpx;
+      }
+      .banner {
+        width: 100%;
+        height: 222rpx;
+        margin-top: 20rpx;
+        image {
+          width: 100%;
+          height: 100%;
+        }
+      }
+      .title {
+        text-align: center;
+        padding: 50rpx 0;
+        text:nth-child(2) {
+          font-size: 32rpx;
+          color: #333;
+          padding: 0 10rpx;
+        }
+        text:nth-child(2n + 1) {
+          color: #999;
+        }
+      }
+      .bottom {
+        display: flex;
+        flex-wrap: wrap;
+        font-size: 15px;
+        .item {
+          width: 33.33%;
+          text-align: center;
+          margin-bottom: 20rpx;
+          image {
+            height: 144rpx;
+            width: 144rpx;
+            display: block;
+            margin: 0 auto;
+            border-radius: 12rpx;
+            margin-bottom:10rpx;
+          }
+          text{
+            font-size: 28rpx;
+            margin-top: 8rpx;
+            color: #666;
+          }
+        }
+      }
+    }
+  }
+}
+</style>
