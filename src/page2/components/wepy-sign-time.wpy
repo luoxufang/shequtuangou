@@ -28,7 +28,10 @@ import api from '@/api/api';
 
   export default class WepySignTime extends wepy.component {
     props = {
-      timeList: []
+      timeList: {
+        type: Array,
+        default: []
+      }
     }
     data = {
       list: [],
@@ -86,13 +89,13 @@ import api from '@/api/api';
       });
       if (json.data.code == 0) {
         //拿到 数据 列表
-        this.list = json.data.data.list;
-        console.log(this.list);
+        that.list = json.data.data.list;
+        // console.log(that.list);
       } else {
         tip.error(json.data.msg)
       }
       that.showLoading = false;
-      this.$apply()
+      that.$apply()
     }
 
     onLoad() {

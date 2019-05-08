@@ -19,7 +19,7 @@
       <view class="sign_doc" wx:if="{{!signed}}">今日还未签到</view>
     </view>
     <view class="line-box">
-      <wepySignTime :list.sync="timeList"></wepySignTime>
+      <wepySignTime :timeList.sync="timeList"></wepySignTime>
     </view>
 
     <!--tab模块-->
@@ -69,7 +69,8 @@
       signList: [],
       is_empty: false,
       signing: false,
-      config:''
+      config:'',
+      timeList:[]
     }
 
     async getUserSign() {
@@ -87,7 +88,7 @@
         that.score = json.data.data.point;//积分
         that.config = json.data.data.config
         wx.setStorageSync('config', json.data.data.config)
-        console.log("jefe==", that.signList);
+        console.log("timeList", that.timeList);
 
         that.$apply();
       } else {
@@ -130,7 +131,7 @@
         // that.conDays = that.conDays + 1;
         that.siging = false;
         this.getUserSign();
-
+        this.pointIndex();
         this.$invoke("wepySignTime","refreshList", "");
         that.$apply();
       } else {

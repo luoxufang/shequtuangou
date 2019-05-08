@@ -22,7 +22,7 @@ import wepy from 'wepy'
 
 export default class PointsRule extends wepy.component {
   props = {
-    number: ''
+    number: String
   }
   data = {
     config: ''
