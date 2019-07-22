@@ -31,7 +31,9 @@
             </view>
             <view class="action_info">
               <view style="flex:1;"><text>共{{item.total_num}}件商品：</text><text>￥{{item.payment}}</text></view>
-              <view class="common_btn" @tap="go_to_order_detail({{item.id}})">查看详情</view>
+              
+              <view class="common_btn" wx:if="{{item.trade_type=='group_found'}}" @tap="go_to_order_assemble({{item.id}})">分享拼团</view>
+              <view class="common_btn" wx:else @tap="go_to_order_detail({{item.id}})">查看详情</view>
             </view>
           </view>
           <view class="content">
@@ -59,7 +61,8 @@
             </view>
             <view class="action_info">
               <view style="flex:1;"><text>共{{item.total_num}}件商品：</text><text>￥{{item.payment}}</text></view>
-              <view class="common_btn" @tap="go_to_order_detail({{item.id}})">查看详情</view>
+              <view class="common_btn" wx:if="{{item.trade_type=='group_found'}}" @tap="go_to_order_assemble({{item.id}})">分享拼团</view>
+              <view class="common_btn" wx:else @tap="go_to_order_detail({{item.id}})">查看详情</view>
             </view>
           </view>
           <view class="content">
@@ -87,7 +90,8 @@
             </view>
             <view class="action_info">
               <view style="flex:1;"><text>共{{item.total_num}}件商品：</text><text>￥{{item.payment}}</text></view>
-              <view class="common_btn" @tap="go_to_order_detail({{item.id}})">查看详情</view>
+              <view class="common_btn" wx:if="{{item.trade_type=='group_found'}}" @tap="go_to_order_assemble({{item.id}})">分享拼团</view>
+              <view class="common_btn" wx:else @tap="go_to_order_detail({{item.id}})">查看详情</view>
             </view>
           </view>
           <view class="content">
@@ -116,7 +120,8 @@
             </view>
             <view class="action_info">
               <view style="flex:1;"><text>共{{item.total_num}}件商品：</text><text>￥{{item.payment}}</text></view>
-              <view class="common_btn" @tap="go_to_order_detail({{item.id}})">查看详情</view>
+              <view class="common_btn" wx:if="{{item.trade_type=='group_found'}}" @tap="go_to_order_assemble({{item.id}})">分享拼团</view>
+              <view class="common_btn" wx:else @tap="go_to_order_detail({{item.id}})">查看详情</view>
             </view>
           </view>
           <view class="content">
@@ -143,7 +148,8 @@
           </view>
           <view class="action_info">
             <view style="flex:1;"><text>共{{item.total_num}}件商品：</text><text>￥{{item.payment}}</text></view>
-            <view class="common_btn" @tap="go_to_order_detail({{item.id}})">查看详情</view>
+            <view class="common_btn" wx:if="{{item.trade_type=='group_found'}}" @tap="go_to_order_assemble({{item.id}})">分享拼团</view>
+            <view class="common_btn" wx:else @tap="go_to_order_detail({{item.id}})">查看详情</view>
           </view>
         </view>
         <view class="content">
@@ -443,6 +449,7 @@
         this.$apply()
       },
       go_to_order_detail(ids){ wx.navigateTo({url: `./orderDetail?id=${ids}`}) },
+      go_to_order_assemble(ids){ wx.navigateTo({url: `../page2/pages/assemble?id=${ids}`}) },
       goToShop(){ this.$root.$switch(`/pages/index`); }
     }
     onPullDownRefresh() {// 5秒模拟数据加载

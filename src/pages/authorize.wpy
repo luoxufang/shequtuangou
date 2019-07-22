@@ -4,7 +4,7 @@
     <view class="goods-buy-panel-cover" catchtouchmove="myCatchTouch" wx:if="{{display}}"></view>
     <view class="btn_authorize" catchtouchmove="myCatchTouch" wx:if="{{authorize}}">
       <view class="Title">终于等到您</view>
-      <view class="cont">为了完整体验全民社区团，获取更多优惠,我们需要您的授权。(授权仅用于用户识别，用户昵称和头像)</view>
+      <view class="cont">为了完整体验鲜生予你，获取更多优惠,我们需要您的授权。(授权仅用于用户识别，用户昵称和头像)</view>
       <button open-type="getUserInfo" type="primary" lang="zh_CN" bindgetuserinfo="onGotUserInfo">确认授权</button>
     </view>
   </view>
@@ -15,7 +15,7 @@ import api from '@/api/api'
 import tip from '@/utils/tip'
 export default class authorize extends wepy.page {
   config = {
-    navigationBarTitleText: '全民社区团'
+    navigationBarTitleText: '鲜生予你'
   }
   data = {
     display: false,

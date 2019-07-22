@@ -125,6 +125,26 @@ const aboutUs = (params) => wxRequest(params, apiMall + '/aboutUs');
 
 //查询广告列表
 const getAdList = (params) => wxRequest(params, apiMall + '/api/adverts/list');
+//保存用户地址
+const storeUserAddress = (params) => wxRequest(params, apiMall + '/userAddress/store');
+//获取用户列表 
+const userAddressList = (params) => wxRequest(params, apiMall + '/userAddress/index');
+//删除地址 
+const deleteUserAddress = (params) => wxRequest(params, apiMall + '/userAddress/destroy');
+//获取编辑地址信息
+const editUserAddress = (params) => wxRequest(params, apiMall + '/userAddress/edit');
+//获取拼团商品列表
+const groupShowList = (params) => wxRequest(params, apiMall + '/item/index');
+//获取拼团商品详情
+const groupDetail = (params) => wxRequest(params, apiMall + '/group/show');
+//拼团商品提交订单（去支付，生成订单）
+const tuanOrderConfirm = (params) => wxRequest(params, apiMall + '/order/store');
+//拼单详情
+const groupOrderDetail = (params) => wxRequest(params, apiMall + '/group/edit');
+//保存微信手机
+const setMobile = (params) => wxRequest(params, apiMall + '/user/setMobile');
+//更改地址  
+const updateAddress = (params) => wxRequest(params, apiMall + '/userAddress/update');
 
 export default {
   wxJsCode2Session,
@@ -182,5 +202,15 @@ export default {
   getSignInfo,
   doSign,
   pointIndex,
-  aboutUs
+  aboutUs,
+  storeUserAddress,
+  userAddressList,
+  deleteUserAddress,
+  editUserAddress,
+  groupShowList,
+  groupDetail,
+  tuanOrderConfirm,
+  groupOrderDetail,
+  setMobile,
+  updateAddress
 }

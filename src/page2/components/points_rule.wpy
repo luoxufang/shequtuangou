@@ -1,7 +1,7 @@
 <!--积分规则-->
 <template>
   <view class="jf_rule">
-    <view class="title tc">全民社区团积分规则</view>
+    <view class="title tc">鲜生予你积分规则</view>
     <!--<view class="jf_jz_title tc">积分价值</view>-->
     <view class="jf_content">
       <view class="sec_title">1.签到积分规则 </view>

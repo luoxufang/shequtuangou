@@ -129,7 +129,7 @@
       </view>
     </view>
     <!-- 普通用户-我的服务 -->
-    <view class="all_order_box" wx:if="{{showOrdinaryUsers}}" style="margin-top:20rpx;margin-bottom: 24rpx;">
+    <view class="all_order_box" wx:if="{{!showOrdinaryUsers}}" style="margin-top:20rpx;margin-bottom: 24rpx;">
       <view class="my_order">
         <view class="click_right">
           <view class="aaa"><span style="font-weight: 400;">我的服务</span></view>
@@ -153,6 +153,12 @@
               <view class="text">领券中心</view>
             </view>
           </view>
+          <view class="goods_stadu_list" @tap="go_to_addressMassege()">
+            <view class="contDiv">
+              <image src="../assets/images/address.png"/>
+              <view class="text">我的地址</view>
+            </view>
+          </view>
           <view class="goods_stadu_list" @tap="go_to_recruit">
             <view class="contDiv">
               <image src="../assets/images/center4.png"/>
@@ -165,13 +171,13 @@
               <view class="text">供应商招募</view>
             </view>
           </view>
-          <!-- userAgreementPolicy -->
-          <view class="goods_stadu_list" @tap="go_to_xieyi">
+          
+          <!-- <view class="goods_stadu_list" @tap="go_to_xieyi">
             <view class="contDiv">
               <image src="../assets/images/i3.png"/>
               <view class="text">用户协议政策</view>
             </view>
-          </view>
+          </view> -->
           <view wx:if="{{myInfoData.delivery_info.flag}}" class="goods_stadu_list" @tap="go_to_delivery">
             <view class="contDiv">
               <image src="../assets/images/center3.png"/>
@@ -190,7 +196,7 @@
       </view>
     </view>
     <!-- 团长-我的服务 -->
-    <view class="all_order_box" wx:if="{{showVipUsers}}" style="margin-top:20rpx;">
+    <view class="all_order_box" wx:if="{{!showVipUsers}}" style="margin-top:20rpx;">
       <view class="my_order">
         <view class="click_right">
           <view class="aaa"><span style="font-weight: 400;">我的服务</span></view>
@@ -213,6 +219,12 @@
             <view class="contDiv">
               <image src="../assets/images/coupon1.png"/>
               <view class="text">领券中心</view>
+            </view>
+          </view>
+          <view class="goods_stadu_list" @tap="go_to_addressMassege()">
+            <view class="contDiv">
+              <image src="../assets/images/address.png"/>
+              <view class="text">我的地址</view>
             </view>
           </view>
           <view class="goods_stadu_list" @tap="go_to_orderManage">
@@ -336,6 +348,9 @@
       go_to_balance(){
         this.$navigate(`./balance?deposit=${this.myInfoData.deposit.deposit}&freeze_deposit=${this.myInfoData.deposit.freeze_deposit}&use_deposit=${this.myInfoData.deposit.use_deposit}`);
       },
+      go_to_addressMassege(){
+        this.$navigate(`../page2/pages/addressMassege`);
+      },
       go_to_couponChoose(type){
         if(type==3){
           this.$navigate(`../page2/pages/coupon?type=`+type);
@@ -344,10 +359,10 @@
         }
       },
       go_to_supplier(){
-        this.$navigate(`./supplier`);
+        this.$navigate(`../page2/pages/supplier`);
       },
       go_to_recruit(){
-        this.$navigate(`./recruit`);
+        this.$navigate(`../page2/pages/recruit`);
       },
       go_to_xieyi(){
         this.$navigate(`../page2/pages/xieyi`);

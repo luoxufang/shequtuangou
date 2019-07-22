@@ -1,11 +1,11 @@
 <template>
-  <view class="goodDetail">
+  <view class="goodDetail pintuan">
     <import src="../components/wxParse/wxParse.wxml"/>
     <view class="content_box">
       <view class="swiper">
         <swiper class="swiper-container" indicator-dots="false" bindchange="changeSwiper" indicator-active-color="rgb(217,31,84)" interval="3000" duration="500">
           <swiper-item class="swiper-item" wx:for="{{ detailInfo.list_image }}" wx:key="index">
-            <image mode="aspectFill" src="https://api.118zc.com{{item}}" class="slide-image" />
+            <image mode="aspectFill" src="{{item}}" class="slide-image" />
           </swiper-item>
         </swiper>
         <view class="showNumber_box"><view class="showNumber">{{currentIndex}}/{{bannerLength}}</view></view>
@@ -15,10 +15,11 @@
       <view class="modiule_box">
         <view class="commonStyle goodInfo">
           <view class="money_and_time">
-            <text class="fuhao">￥</text><text class="money">{{detailInfo.price}}</text>
+            <text class="fuhao">￥</text><text class="money">{{detailInfo.group_info.group_price}}</text>
             <label>￥{{detailInfo.mkt_price}}</label>
+            <span class="noticeA">{{detailInfo.group_info.group_people_num}}人团</span>
           </view>
-          <view class="money_and_time2">
+          <!-- <view class="money_and_time2">
             <view class="position_box">
               <view class="time2">
                 <view style="position:relative;top:-18rpx;">距结束</view>
@@ -30,49 +31,52 @@
               </view>
               <view class="test" style="left:{{advance}};"></view>
             </view>
-          </view>
+          </view> -->
 
           <view class="title">{{detailInfo.title}}</view>
           <view class="self_mention">
             <image class="image" mode="aspectFill" src="../assets/123.png" />
-            <text>现在下单，先到先得哟</text>
+            <text>现在下单，先到先得哟~</text>
           </view>
           <view wx:if="{{is_limit}}" class="sales active1"><label>限购</label><text>每人限购{{detailInfo.limit_max_buy}}份</text></view>
-          <view class="sales active2"><label>销量</label><text>已售  {{detailInfo.sold_quantity}}  件，剩余<text style="margin-left:0;color:#FF4444;">  {{detailInfo.store}}  </text>件</text></view>
-        </view>
-       
-        <view class="commonStyle activity" wx:if="{{couponsArr.length}}">
-          <view class="active">
-            <label>活动</label>
-            <van-tag class="van-tag" round type="danger" wx:for="{{couponsArr}}">{{item}}</van-tag>
-            <!-- <text wx:for="{{detailInfo.couponsArr}}" wx:key="index">{{item}}</text> -->
-            <!-- <text>{{couponsArr}}</text> -->
-          </view>
+          <view class="sales active2"><label>销量</label><text>已售  {{detailInfo.sold_quantity}}  件，剩余<text style="margin-left:0;color:#FF4444;">  {{detailInfo.item_store.store}}  </text>件</text></view>
         </view>
 
         <!-- 购买记录 -->
         <view class="commonStyle shopRecord">
           <view class="recordTitle">
-            <view class="title">购买记录</view>
-            <view class="sell_notice" @tap="go_to_shopRecord">
-              <view>已有 <text style="color:#FF4444;">{{avatar_Img.total}}</text> 人购买</view>
+            <view class="title">跟他们拼团</view>
+            <view class="sell_notice">
+              <view>已有 <text style="color:#FF4444;">{{detailInfo.group_info.list.length}}</text> 人发起拼单</view>
               <image style="width:14rpx;height:24rpx;margin-left:16rpx;" mode="aspectFill" src="../assets/right.png"/>
             </view>
           </view>
-          <view class="img_list_box">
-            <block wx:for="{{avatar_Img.list}}" wx:key="index">
-              <view class="avatar_box">
-                <image mode="aspectFill" src="{{item.avatar_logo}}" />
-              </view>
-            </block>
-            <view class="avatar_box class" @tap="go_to_shopRecord" wx:if="{{showMoreAvatar}}">
-              <image mode="aspectFill" src="../assets/more.png" />
+
+          <!-- 循环的拼团人列表 -->
+          <block wx:for="{{groupTuanList}}" wx:key="index">
+            <view class="number_list_box">
+                <view class="avatar_box">
+                  <image mode="aspectFill" src="{{item.sysuser_user.avatar_logo}}" />
+                </view>
+                <view class="name">{{item.sysuser_user.nickname}}</view>
+                <view class="nowTimeBox">
+                  <view>还差<span style="color:#ff7224;">{{detailInfo.group_info.group_people_num - item.join_num}}人</span>成团</view>
+                  <view style="display:flex;align-items: center;">
+                    <view>距结束：</view>
+                    <i-count-down class="i-count-down" style="height:48rpx;"
+                      target="{{item.sec_to_time}}"
+                      clear-timer="{{clearTimer}}"
+                    ></i-count-down>
+                  </view>
+                </view>
+                <view class="shopButtom" @tap.stop="showtuanfun({{item.id}},{{item}})">去拼团</view>
             </view>
-          </view>
+          </block>
+
         </view>
       </view>
       <!-- 详情 -->
-      <view class="good_detail_img" wx:if="{{detailInfo.contents}}">
+      <view class="good_detail_img" wx:if="{{detailInfo.content}}">
         <view class="weui-loadmore weui-loadmore_line" style="width:42%;font-size:38rpx;">
           <view class="weui-loadmore__tips weui-loadmore__tips_in-line">商品详情</view>
         </view>
@@ -84,6 +88,40 @@
       </view>
     </view>
 
+    <!--TODO 拼团弹窗-->
+    <view class="goods-buy-panel-cover" catchtouchmove="myCatchTouch" @tap="close2"  wx:if="{{display_tuan}}"></view>
+    <view catchtouchmove="myCatchTouch" style="width:600rpx;margin:0 auto;top:16%;left:10%;" class="goods-buy-panel-container {{ display_tuan ? 'goods-buy-panel-show' : '' }}" >
+      <view class="tanchaung" style="border-radius:19rpx;height:400rpx;padding-bottom:30rpx;">
+        <view class="cont" style="display:block;">
+          <image class="delete_img" @tap="close2" mode="aspectFill" src="../assets/images/del.png"/>
+          <view class="tuan_title" style="font-size:32rpx;color:#333;">
+           参与拼团          
+          </view>
+          <!-- 拼团商品信息wx:for="{{tuanList}}" wx:key="index" -->
+          <view class="tuan_cell_list">
+            <view class="timeNow">
+              <view>仅剩下5个名额， </view>
+              <!-- <i-count-down class="i-count-down" style="height:48rpx;"
+                target="{{targetTime1}}"
+                clear-timer="{{clearTimer}}"
+              ></i-count-down> -->
+              <view> 手快有手慢无哟~</view>
+            </view>
+
+            <view class="image_con">
+              <image mode="aspectFill" src="{{clickNowInfo.sysuser_user.avatar_logo}}"/>
+              <image mode="aspectFill" wx:for="{{clickNowInfo.promotion_group_follow}}" 
+              wx:key="index" src="{{item.sysuser_user.avatar_logo}}"/>
+              <view class="circle-box"  wx:for="{{nullArr}}" wx:key="index">?</view>
+            </view>
+
+            <view class="shopButtom" @tap="onClickButton('group')">参与 {{clickNowInfo.sysuser_user.nickname}} 拼团</view>
+          </view>
+        </view>
+        
+      </view>
+    </view>
+
     <!--TODO 滑出面板可以重构-->
     <view class="goods-buy-panel-cover" catchtouchmove="myCatchTouch" @tap="close"  wx:if="{{display}}"></view>
     <!--购买面板-->
@@ -91,7 +129,7 @@
       <view class="tanchaung">
         <view class="cont">
           <image class="delete_img" @tap="close" mode="aspectFill" src="../assets/images/del.png"/>
-          <view class="min_img"><image mode="aspectFill" src="https://api.118zc.com{{defaultImg}}"/></view>
+          <view class="min_img"><image mode="aspectFill" src="{{defaultImg}}"/></view>
           <view class="right_proInfo">
             <view class="title">{{detailInfo.sub_title}}</view>
             <view class="fuhao_box">
@@ -127,7 +165,7 @@
             <view class="buy-num">
               <view class="jian-btn {{quantity==1? 'disabled' : ''}}" catchtap="jianBtnTap" data-index="{{index}}" data-id="{{item.id}}">-</view>
               <input type="number" value="{{quantity}}" disabled/>
-              <view class="jia-btn {{quantity==100? 'disabled' : ''}}" catchtap="jiaBtnTap" data-index="{{index}}" data-id="{{item.id}}">+</view>
+              <view class="jia-btn {{quantity==1? 'disabled' : ''}}" catchtap="jiaBtnTap" data-index="{{index}}" data-id="{{item.id}}">+</view>
             </view>
           </view>
         </scroll-view>
@@ -140,9 +178,9 @@
     <!-- 底部 点击 弹弹窗 -->
     <van-goods-action>
       <van-goods-action-icon icon="wap-home" url="/pages/index" link-type="switchTab" text="回首页" />
-      <van-goods-action-icon icon="cart-o" bind:click="onClickIcon" text="购物车" info="{{infoVal}}" />
-      <van-goods-action-button text="加入购物车" bind:click="onClickButton(0)" type="warning" />
-      <van-goods-action-button bind:click="onClickButton(1)" text="立即购买" />
+      <!-- <van-goods-action-icon icon="cart-o" bind:click="onClickIcon" text="购物车" info="{{infoVal}}" /> -->
+      <van-goods-action-button text="单独购买(￥{{detailInfo.price}})" bind:click="go_to_goodDetail()" type="warning" />
+      <van-goods-action-button bind:click="onClickButton(1)" text="发起拼团(￥{{detailInfo.group_info.group_price}})" />
     </van-goods-action>
   </view>
 </template>
@@ -155,7 +193,7 @@
   import WxParse from '../components/wxParse/wxParse'
   export default class Index extends wepy.page {
     config = {
-      navigationBarTitleText: '商品详情',
+      navigationBarTitleText: '团购详情',
       usingComponents: {
         "van-goods-action": "/components/vant/goods-action/index",
         "van-goods-action-icon": "/components/vant/goods-action-icon/index",
@@ -165,6 +203,12 @@
       }
     }
     data = {
+      nullArr:[],
+      clickNowInfo:{},
+      groupTuanList:[],
+      group_id:'',//是否跟团标志
+      tuanList:[1,2,3],
+      display_tuan:'',
       bugNowBtn:false,
       display: false,
       infoVal:'',
@@ -174,7 +218,7 @@
       avatar_Img:[],
       detail: {'id':1,'name':'测试','imageUrl':'../assets/111.png','bbb':'bbb'},
       showMoreAvatar: false,
-      targetTime1: new Date().getTime() + 10000,
+      targetTime1: new Date().getTime() + 100000,
       clearTimer: false,
       advance:'-79rpx',
       detailInfo: {},
@@ -186,7 +230,6 @@
       choosed_goods_no:['规格'],
       attrValueList: [],
       options:'',
-      couponsArr:[],
       defaultImg:'',
       tempPrice:'0.00',
       quantity: 1,//商品数量
@@ -201,23 +244,10 @@
     }
     async onLoad(options, preloadData) {
       this.options = options.sourcePage
-      // if (preloadData.preload) {
-        // console.log('拿到A页面preload过来的数据了：', preloadData.preload.preload.data);
-        // this.detailInfo = preloadData.preload.preload.data;
-        // this.targetTime1 = preloadData.preload.preload.data.end_sell_time*1000
-        // let coupons = this.detailInfo.couponsArr.map((item)=>{return item})
-        // this.couponsArr = coupons.join("，")
-        // this.bannerLength = preloadData.preload.preload.data.list_image.length;
-        // this.defaultImg = preloadData.preload.preload.data.spec_desc[0].child[0].prop_value_image
-        // this.tempPrice = preloadData.preload.preload.data.item_sku_ret[0].price
-        // //初始化一级属性状态
-        // this.spec_desc = preloadData.preload.preload.data.spec_desc;
-        // this.item_sku_ret = preloadData.preload.preload.data.item_sku_ret
-        // this.$apply();
-        this.go_to_goodDetail(options.sourcePage) //马上马上马上
-        this.statisticsStore()
-        this.targetTime1 = new Date().getTime() + 8643000000
-      // }
+      this.get_goodDetail(options.sourcePage) //马上
+      this.statisticsStore()
+      // this.targetTime1 = new Date().getTime() + 8643000000
+
       //我-时间
       let myDate = new Date();
       let getTime = (myDate.getMonth()+1) +'月'+ (myDate.getDate()+1) +'日'
@@ -257,6 +287,19 @@
       console.log("定时器关闭")
     }
     methods = {
+      showtuanfun(id,dataItem){// 拼团弹窗
+        this.display_tuan = true;
+        this.group_type = id //用户的拼单ID
+        this.clickNowInfo = dataItem
+        //处理显示的头像,计算空的人数
+        let nullPeopleNum = this.detailInfo.group_info.group_people_num - dataItem.promotion_group_follow.length -1
+        let arr = new Array(nullPeopleNum)
+        for (var i = 0; i < arr.length; i++) {
+          arr[i] = i;
+        }
+        this.nullArr = arr
+        this.$apply();
+      },
       go_to_shopRecord(){
         this.$navigate('./shopRecord?cid='+ this.options);
       },
@@ -274,16 +317,20 @@
         this.quantity--
       },
       jiaBtnTap(){
-        if(this.quantity>100){ return }
+        if(this.quantity>=1){ return }
         this.quantity++
       },
+      async go_to_goodDetail(){
+        wx.navigateTo({url: `./goodDetail?sourcePage=${this.options}`})
+      },
       onClickButton(action) {
-        if(this.detailInfo.spec_desc){//有规格的情况下
+        if(this.detailInfo.planningValue){//有规格的情况下
           this.display = true;
           if(action==1){
             this.bugNowBtn=true
-          }else{
-            this.bugNowBtn=false
+            this.group_type = ''
+          }else if(action=='group'){
+            this.bugNowBtn=true
           }
         }else{//没有规格 this.infoVal++
           if(action==1){
@@ -415,22 +462,28 @@
         }
       }
     }
-    async go_to_goodDetail(id){
-      const preloadData = await api.getItemDetail({query:{ item_id:id }});
-      this.targetTime1 = preloadData.data.data.end_sell_time*1000
-      if (!preloadData.data.code) {
+    async get_goodDetail(id){
+      const preloadData = await api.groupDetail({query:{ id:id,is_group:1 }});
+      //注释时间倒计时
+      // this.targetTime1 = preloadData.data.data.end_sell_time*1000
+      if (preloadData.data.code==200) {
         console.log('拿到A页面preload过来的数据了：', preloadData.data.data);
         this.detailInfo = preloadData.data.data;
-        this.targetTime1 = parseInt(preloadData.data.data.end_sell_time*1000)
-        let coupons = this.detailInfo.couponsArr.map((item)=>{return item})
-        this.couponsArr = coupons.join("，")
+        //循环添加拼团人列表时间
+        let aaaa = preloadData.data.data.group_info.list.map((item)=>{
+          item.sec_to_time = new Date().getTime() +  Math.abs(item.sec_to_time)
+          return item
+        })
+        this.groupTuanList = aaaa
+
         this.bannerLength = preloadData.data.data.list_image.length;
-        if(preloadData.data.data.spec_desc!==null){
-          this.defaultImg = preloadData.data.data.spec_desc[0].child[0].prop_value_image
-          this.tempPrice = preloadData.data.data.item_sku_ret[0].price
+        if(preloadData.data.data.planningValue!==null){
+          this.defaultImg = preloadData.data.data.planningValue[0].child[0].prop_value_image
+          this.tempPrice = preloadData.data.data.item_sku[0].price
         }
+        //转换为富文本
         try {
-          let htmlContent = WxParse.wxParse('article', 'html', this.detailInfo.contents, this, 6)
+          let htmlContent = WxParse.wxParse('article', 'html', this.detailInfo.content, this, 6)
           //this.htmlParserTpl = this[this.parserName];
           this.htmlParserTpl = htmlContent['article']
         } catch (e) {
@@ -438,8 +491,8 @@
         }
 // 000000000000000000000000000000
         //初始化一级属性状态
-        this.spec_desc = preloadData.data.data.spec_desc;
-        this.item_sku_ret = preloadData.data.data.item_sku_ret
+        this.spec_desc = preloadData.data.data.planningValue;
+        this.item_sku_ret = preloadData.data.data.item_sku
         this.$apply();
 
         if(this.spec_desc){
@@ -577,21 +630,10 @@
       this.$apply();
     }
     async bug_now_request(sku_id){
-      // let result = await api.getExpectedTradeDetail({
-      //   query:{ 
-      //     token: wx.getStorageSync('openid'), 
-      //     item_id: this.options, 
-      //     coupon_id: 0, 
-      //     sku_id: sku_id,
-      //     quantity: this.quantity
-      //   },
-      // });
-      // if(!result.data.code){
-      //   console.log(result.data.data)
-      //   wx.setStorageSync('confirmData', result.data.data)//保存"确认订单"的数据
-      //   wx.setStorageSync('sku_id', this.skuVala[this.selectVal.join(";")])
-      // }
-      wepy.navigateTo({url: `./orderConfirm?id=${this.options}&sku_id=${sku_id}&quantity=${this.quantity}`})//跳转"订单确认"
+      //带参商品id、sku_id、数量1、是否团购标志、跟团还是开团标志，跳转"订单确认"
+      wepy.navigateTo({
+        url: `../pages/orderConfirm?id=${this.options}&sku_id=${sku_id}&quantity=${this.quantity}&is_group=1&group_id=${this.group_type}`
+      })
       this.close()
       this.$apply();
     }
@@ -601,6 +643,9 @@
       this.action = 'cart';
       this.display = false;
       this.bugNowBtn = false
+    }
+    close2 () {
+      this.display_tuan = false;
     }
     async statisticsStore(itemStat){
       const result = await api.statisticsStore({
@@ -649,6 +694,54 @@
 @import '../utils/style.less';
 @import "../components/wxParse/wxParse.wxss";
 /*购买面板*/
+.tuan_title{
+  text-align: center;
+}
+.tuan_cell_list{
+  overflow:hidden;
+  margin-top:22rpx;
+  padding-bottom:15rpx;
+  .timeNow{
+    color: #666;
+    margin-top: 24rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .image_con{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 36rpx 20rpx;
+    image{
+      width: 90rpx;
+      height: 90rpx;
+      border-radius: 50%;
+    }
+  }
+  .shopButtom{
+    width: 440rpx;
+    height: 68rpx;
+    background: #FF6356;
+    font-size: 28rpx;
+    border-radius: 14rpx;
+    color: #fff;
+    text-align: center;
+    line-height: 68rpx;
+    margin: 0 auto;
+  }
+  .circle-box{
+    border: 1px solid #eeeeee;
+    width: 90rpx;
+    height: 90rpx;
+    line-height: 90rpx;
+    border-radius: 100rpx;
+    margin-left: 10rpx;
+    text-align: center;
+    vertical-align: middle;
+    color:  #eeeeee;
+  }
+}
 
 .goods-buy-panel-show{
   transform: translateY(0);
@@ -755,6 +848,17 @@
       border-top-left-radius: 0;
       border-top-right-radius: 0;
       position: relative;
+      .noticeA{
+        width: 90rpx;
+        height: 46rpx;
+        line-height: 46rpx;
+        text-align: center;
+        background: #323232;
+        border-radius: 12rpx;
+        margin-left: 20rpx;
+        color: #fff;
+        display:inline-block;
+      }
       .money_and_time{
         width: 100%;
         position: absolute;
@@ -866,7 +970,6 @@
         display: flex;
         align-items: center;
         padding-bottom: 30rpx;
-        border-bottom: 1rpx solid #F0F0F0;
         .title{
           font-size: 32rpx;
           font-weight: 700;
@@ -882,13 +985,13 @@
           justify-content: flex-end;
         }
       }
-      .img_list_box{
+      .number_list_box{
         display: flex;
-        flex-wrap:wrap;
-        padding-top:20rpx;
+        // flex-wrap:wrap;
+        padding:20rpx 0;
+        border-top: 1rpx solid #F0F0F0;
+        align-items: center;
         .avatar_box{
-          width: 20%;
-          height: 108rpx;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -898,6 +1001,25 @@
             height: 90rpx;
             border-radius: 50%;
           }
+        }
+        .name{
+          flex: 1;
+          margin-left: 28rpx;
+          color: #666;
+          width: 120rpx;
+        }
+        .nowTimeBox{
+          margin-right: 24rpx;
+        }
+        .shopButtom{
+          width: 100rpx;;
+          height: 42rpx;
+          background: #FF6356;
+          font-size: 24rpx;
+          border-radius: 12rpx;
+          color: #fff;
+          text-align: center;
+          line-height: 42rpx;
         }
       }
     }

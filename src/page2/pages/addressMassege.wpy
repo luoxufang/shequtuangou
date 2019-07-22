@@ -1,0 +1,245 @@
+<template>
+  <view class="myAddressPage myContainer">
+    <view class="aa" wx:for="{{addressList}}" wx:key="index">
+
+      <view class="top" data-ciid="{{item.id}}"  data-type="2">
+        <view class="a0">
+            <view class="a1">{{item.user_name}}</view>
+            <view class="a2">{{item.tel_number}}</view>
+            <view class="clear"></view>
+        </view>
+        <view class="a4">{{item.province_str}} {{item.city_str}} {{item.area_str}} {{item.detail_info}}</view>
+      </view>
+
+      <view class="a5">
+        <view class="left">
+          <!-- <icon  wx:if="{{item.stadus ? true :false}}" class="a7" type="success" size="17" color="{{color}}"/>
+          <view wx:else bindtap="choose_address" data-index='{{index}}' data-ciid = "{{item.ciid}}" class="a8" ></view> -->
+
+          <image wx:if="{{item.is_default ? true :false}}" class="a7" src="../../assets/images/ad_default2@3x.png" data-ciid="{{item.ciid}}"/>
+          <image wx:else @tap="choose_address({{item}})" class="a8" src="../../assets/images/ad_default@3x.png" data-ciid="{{item.ciid}}"/>
+
+          <text @tap="choose_address({{item}})"  data-ciid = "{{item.ciid}}">默认地址</text>
+        </view>
+        
+        <view class="center" @tap.stop="address_deals({{item.id}})">
+          <image src="../../assets/images/us_edit@3x.png" class="a6" data-ciid="{{item.ciid}}"/>编辑
+        </view>
+        <view class="right" @tap.stop='delete_ciid({{item.id}})'>
+          <image src='../../assets/images/ad_delete@3x.png' class='edit' data-ciid='{{item.ciid}}' data-type="2"/>删除
+        </view>
+      </view>
+
+    </view>
+    
+     <view class="button" @tap="address_deals()">添加地址</view>
+
+  </view>
+</template>
+
+<script>
+import wepy from 'wepy';
+import api from "@/api/api"
+import tip from '@/utils/tip'
+export default class AddressMassege extends wepy.page {
+  config = {
+    navigationBarTitleText: '我的地址'
+  };
+  data = {
+    addressList:[]
+  }
+  onShow (){
+    this.userAddressList()
+  }
+  onLoad(option) {
+    // this.userAddressList()
+  }
+  methods = {
+    address_deals(address_id){
+      if(address_id){
+        this.$navigate('./addressDetail?address_id='+`${address_id}`);
+      }else{
+        this.$navigate(`./addressDetail`);
+      }
+    },
+    delete_ciid(del_id){
+      let that = this
+      wx.showModal({
+        title: '提示',
+        content: '确定删除?',
+        confirmColor:'#d91f54',
+        success: function(res) {
+          if (res.confirm) {
+            that.deleteUserAddress(del_id)
+          } else if (res.cancel) {
+            console.log('用户点击取消')
+          }
+        }
+      })
+    },
+    async choose_address(itemData){
+      console.log(itemData)
+      const data = await api.storeUserAddress({
+        query:{
+          province_str:itemData.province_str,
+          city_str:itemData.city_str,
+          area_str:itemData.area_str,
+          user_name:itemData.user_name,
+          tel_number:itemData.tel_number,
+          detail_info:itemData.detail_info,
+          is_default:!itemData.is_default ? 1:0,
+          token: wx.getStorageSync('openid')
+        },
+        method:'post'
+      });
+      if(data.data.code==200){
+        tip.toast('设置成功')
+      }else{
+        tip.toast(data.data.msg)
+      }
+    }
+  }
+  //删除地址项
+  async deleteUserAddress(ids){
+    const result = await api.deleteUserAddress({
+      query:{ 
+        token : wx.getStorageSync('openid'),
+        ids : ids
+      },
+      method:"POST"
+    });
+    if(result.data.code==200){
+      console.log(result.data.data)
+      this.userAddressList()
+    }
+    this.$apply();
+  }
+  //获取地址列表
+  async userAddressList(){
+    const result = await api.userAddressList({
+      query:{ token : wx.getStorageSync('openid') },
+      method:"POST"
+    });
+    if(result.data.code==200){
+      console.log(result.data.data)
+      this.addressList = result.data.data.list
+    }
+    this.$apply();
+  }
+
+}
+</script>
+
+<style lang="less" >
+.myContainer{
+  border-top: 1rpx solid #eee;
+  padding-bottom: 110rpx;
+}
+.aa {
+  background-color: #fff;
+  margin-bottom: 22rpx;
+  padding-left: 20rpx;
+}
+.aa .title {
+  height: 86rpx;
+  line-height: 86rpx;
+  color: #333333;
+  font-size: 28rpx;
+}
+
+.top{
+  padding: 20rpx 20rpx 20rpx 0;
+  line-height: 56rpx;
+  border-bottom: 1rpx solid #E0E0E0;
+  .a0 {
+    display: flex;
+    line-height: 56rpx;
+    .a1{
+      flex: 1;
+      font-size: 30rpx;
+      color: rgb(0, 0, 0);
+    }
+    .a2{
+      flex: 1;
+      font-size: 30rpx;
+      color: rgb(0, 0, 0);
+      text-align: right;
+    }
+  }
+  .a4{
+    font-size: 28rpx;
+    color: rgb(102, 102, 102);
+  }
+}
+
+.a5 {
+  height: 90rpx;
+  line-height: 90rpx;
+  color: #999999;
+  // padding: 0 20rpx;
+  display: flex;
+  text{
+    font-size: 28rpx;
+    color: rgb(34, 34, 34);
+  }
+  .left{
+    flex: 5;
+  }
+  .center{
+    flex: 2;
+    font-size: 28rpx;
+    color: rgb(102, 102, 102);
+    .a6 {
+      margin-right: 16rpx;
+      position: relative;
+      top: 8rpx;
+      width: 33rpx;
+      height: 36rpx;
+    }
+  }
+  .right{
+    flex: 2;
+    font-size: 28rpx;
+    color: rgb(102, 102, 102);
+    padding-left: 10rpx;
+    .edit {
+      margin-right: 16rpx;
+      
+      position: relative;
+      top: 6rpx;
+      width: 34rpx;
+      height: 34rpx;
+    }
+  }
+}
+.a7 {
+  margin-right: 12rpx;
+  position: relative;
+  top: 4rpx;
+  width: 30rpx;
+  height: 30rpx;
+}
+
+.button {
+  margin:  0 20rpx;
+  height: 88rpx;
+  line-height: 88rpx;
+  font-size: 32rpx;
+  color: #fff;
+  width: 710rpx;
+  border-radius: 12rpx;
+  background-color: #d91f54;
+  text-align: center;
+  position: fixed;
+  bottom: 30rpx;
+}
+.a8 {
+  width: 30rpx;
+  height: 30rpx;
+  margin-right: 12rpx;
+  position: relative;
+  top: 4rpx;
+  // border: 1rpx solid #999999;
+  border-radius: 100%;
+}
+</style>

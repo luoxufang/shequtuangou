@@ -62,7 +62,7 @@
   import api from '@/api/api'
   export default class Index extends wepy.page {
     config = {
-      navigationBarTitleText: '全民社区团',
+      navigationBarTitleText: '鲜生予你',
       navigationBarBackgroundColor: "#d91f54",
       navigationBarTextStyle: "white",
       usingComponents: {}

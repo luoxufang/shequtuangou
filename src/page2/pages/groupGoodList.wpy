@@ -1,0 +1,161 @@
+<template>
+  <view class="myContainer groupGoodList">
+    <view class="shop_recommen_list" style="margin-top: 20rpx;">
+      <view class="shop_list">
+        <view class="list_box" wx:for="{{goodsList}}" wx:key="index" data-id="{{item.id}}" @tap="go_to_goodDetail2({{item.id}})">
+          <view class="img_boxx">
+            <image mode="aspectFill" src="{{item.default_image}}" alt=""/>
+          </view>
+          <view class="shop_right_box">
+            <view class="title">{{item.title}}</view>
+            <view class="label">
+              <repeat wx:for="{{item.tags}}" wx:key="index">
+                <van-tag class="van-tag" round type="danger">{{item}}</van-tag>
+              </repeat>
+            </view>
+            <view class="format"><view>已售{{item.sold_quantity}} / 还剩{{item.store}}件</view></view>
+            <view class="money">
+              <view class="fuhao_box"><text class="fuhao">￥</text><text class="money">{{item.price}}</text><label>￥{{item.mkt_price}}</label></view>
+            </view>
+            <!-- <image class="cartImg" @tap.stop="onClickButton({{item.id}},{{item.item_sku_ret}},{{item.spec_desc}})" mode="aspectFill" src="../assets/cart2.png"/> -->
+            <view class="shopButtom">立即开团</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <i-load-more wx:if="{{isLoading}}" i-class="loadingClassYes" loading="{{true}}" />
+    <i-load-more wx:if="{{loadOnNoData}}" i-class="loadingClassNo" tip="没有更多了" loading="{{false}}" />
+  </view>
+</template>
+<script>
+import wepy from 'wepy'
+import api from '@/api/api'
+export default class groupGoodList extends wepy.page {
+  config = {
+      navigationBarTitleText: '精品拼团',
+      usingComponents: {
+        "van-tag": "/components/vant/tag/index",
+        "i-load-more": "../../resources/ui/load-more/index"
+      }
+    }
+    data = {
+      goodsList:[]
+    }
+    onLoad(){
+      this.groupShowList()
+    }
+    methods = {
+      applyTuan(){
+        this.$navigate(`./applyTuan`);
+      },
+      async go_to_goodDetail2(id){
+        wx.navigateTo({url: `../../pages/goodDetail2?sourcePage=${id}`})
+      }
+    }
+    async groupShowList(){
+      const result = await api.groupShowList({
+        query:{
+          page:1, 
+          pageSize:20,
+          item_type:'group',
+          token: wx.getStorageSync('openid')
+        },
+        method:"POST",
+      })
+      if(!result.data.code){
+        this.goodsList = result.data.data.list
+      }
+      this.$apply()
+    }
+}
+</script>
+<style lang="less">
+.myContainer{
+  // 商品列表
+  .shop_recommen_list{
+    margin-top: 48rpx;
+    .shop_list{
+      padding: 0 20rpx;
+      .list_box{
+        padding: 18rpx;
+        display: flex;
+        background-color: #fff;
+        border-radius: 8rpx;
+        margin-bottom: 18rpx;
+        box-shadow:0 2px 10px 2rpx rgba(0, 0, 0, 0.08);
+        .img_boxx{
+          width: 200rpx;
+          height: 200rpx;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          image{
+            width: 100%;
+            height: 100%;
+            border-radius: 8rpx;
+          }
+        }
+        .shop_right_box{
+          flex: 1;
+          margin-left: 20rpx;
+          font-size: 28rpx;
+          position:relative;
+          .title{
+            font-weight: 600;
+            font-size: 30rpx;
+            color: #333;
+            overflow:hidden;
+            word-break:break-all;
+            display:-webkit-box;
+            -webkit-line-clamp:2;
+            -webkit-box-orient:vertical;
+          }
+          .label{
+            padding: 8rpx 0;
+          }
+          .format{
+            font-size: 24rpx;
+            color: #666;
+            display: flex;
+            view{
+              padding: 6rpx 8rpx;
+              border: 1rpx solid #eee;
+              border-radius: 32rpx;
+            }
+          }
+          .money{
+            .fuhao_box{
+              color: #FF6356;
+              .fuhao{ font-size: 20rpx;}
+              .money{ font-size: 40rpx;}
+              label{ font-size: 28rpx;text-decoration:line-through;margin-left: 12rpx;color: #999;}
+            }
+          }
+          .cartImg{
+            width:58rpx;
+            height:58rpx;
+            position: absolute;
+            bottom: 12rpx;
+            right: 24rpx;
+          }
+          .shopButtom{
+            width: 140rpx;;
+            height: 42rpx;
+            background: #FF6356;
+            font-size: 24rpx;
+            border-radius: 12rpx;
+            color: #fff;
+            text-align: center;
+            line-height: 42rpx;
+            position: absolute;
+            bottom: 12rpx;
+            right: 24rpx;
+          }
+        }
+      }
+    }
+  }
+}
+
+</style>

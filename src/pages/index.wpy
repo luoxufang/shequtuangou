@@ -4,7 +4,7 @@
     <view class="goods-buy-panel-cover" catchtouchmove="myCatchTouch" wx:if="{{display}}"></view>
     <view class="btn_authorize" catchtouchmove="myCatchTouch" wx:if="{{authorize}}">
       <view class="Title">终于等到您</view>
-      <view class="cont">为了完整体验全民社区团，获取更多优惠,我们需要您的授权。(授权仅用于用户识别，用户昵称和头像)</view>
+      <view class="cont">为了完整体验鲜生予你，获取更多优惠,我们需要您的授权。(授权仅用于用户识别，用户昵称和头像)</view>
       <button open-type="getUserInfo" type="primary" lang="zh_CN" bindgetuserinfo="onGotUserInfo">确认授权</button>
     </view>
     <!-- 首页 团长显示和购买人 -->
@@ -72,7 +72,7 @@
       </view>
     </view> -->
 
-    <view class="recommend">
+    <!-- <view class="recommend">
       <view class="block_left" @tap="go_to_category2">
         <view class="display_flex">
           <view>大家都在买</view>
@@ -109,21 +109,43 @@
           </view>
           <image mode="aspectFill" src="https://api.118zc.com/uploads/20190424/20190424195805_5cc04f4d4e08c.png" alt=""/>
         </view>
-
+      </view>
+    </view> -->
+    <!-- 拼团模块 -->
+    <!-- <view class="cellimgbox" style="margin:20rpx 20rpx 0 20rpx;border-radius:20rpx;overflow:hidden;">
+      <image mode="aspectFill" src="https://api.118zc.com/uploads/20190717/20190717172243_5d2ee8e31a921.jpg"/>
+    </view> -->
+    <view class="shop_recommen_list" style="margin-top:50rpx;">
+      <view class="weui-loadmore weui-loadmore_line" style="width:32%;font-size:30rpx;">
+        <view class="weui-loadmore__tips weui-loadmore__tips_in-line">每日拼团</view>
+      </view>
+      <view class="shop_list">
+        <view class="list_box" wx:for="{{goodsList2}}" wx:key="index" data-id="{{item.id}}" @tap="go_to_goodDetail2({{item.id}})">
+          <view class="img_boxx">
+            <image mode="aspectFill" src="{{item.default_image}}" alt=""/>
+          </view>
+          <view class="shop_right_box">
+            <view class="title">{{item.title}}</view>
+            <view class="label">
+              <repeat wx:for="{{item.tags}}" wx:key="index">
+                <van-tag class="van-tag" round type="danger">{{item}}</van-tag>
+              </repeat>
+            </view>
+            <view class="format"><view>已售{{item.sold_quantity}} / 还剩{{item.store}}件</view></view>
+            <view class="money">
+              <view class="fuhao_box"><text class="fuhao">￥</text><text class="money">{{item.price}}</text><label>￥{{item.mkt_price}}</label></view>
+            </view>
+            <!-- <image class="cartImg" @tap.stop="onClickButton({{item.id}},{{item.item_sku_ret}},{{item.spec_desc}})" mode="aspectFill" src="../assets/cart2.png"/> -->
+            <view class="shopButtom">立即开团</view>
+          </view>
+        </view>
+        <view class="seeMoreBtn" wx:if="{{goodsList2.length==4}}" @tap="seeMoreBtn()">查看更多</view>
       </view>
     </view>
-
+    <!-- 普通商品模块 -->
     <view class="shop_recommen_list">
-      <!-- <view class="nowShop_advanceSale">
-        <view class="child" @tap="changeSaleModule(1)">
-          <view class="span {{nowShop?'active':''}}">正在抢购</view>
-        </view>
-        <view class="child" @tap="changeSaleModule(2)">
-          <view class="span {{!nowShop?'active':''}}">正在预售</view>
-        </view>
-      </view> -->
-      <view class="weui-loadmore weui-loadmore_line" style="width:42%;font-size:30rpx;">
-        <view class="weui-loadmore__tips weui-loadmore__tips_in-line">倾力推荐</view>
+      <view class="weui-loadmore weui-loadmore_line" style="width:32%;font-size:30rpx;">
+        <view class="weui-loadmore__tips weui-loadmore__tips_in-line">爆款秒杀</view>
       </view>
 
       <view class="shop_list">
@@ -146,9 +168,10 @@
           </view>
         </view>
         <imgloader2 />
-        
-        <i-load-more wx:if="{{isLoading}}" i-class="loadingClassYes" loading="{{true}}" />
-        <i-load-more wx:if="{{loadOnNoData}}" i-class="loadingClassNo" tip="没有更多了" loading="{{false}}" />
+        <view wx:if="{{goodsList.length>1}}">
+          <i-load-more wx:if="{{isLoading}}" i-class="loadingClassYes" loading="{{true}}" />
+          <i-load-more wx:if="{{loadOnNoData}}" i-class="loadingClassNo" tip="没有更多了" loading="{{false}}" />
+        </view>
       </view>
     </view>
 
@@ -219,7 +242,7 @@
   import ImgLoader from '../components/imageLoad'
   export default class Index extends wepy.page {
     config = {
-      navigationBarTitleText: '全民社区团',
+      navigationBarTitleText: '鲜生予你',
       enablePullDownRefresh: true,
       backgroundTextStyle: 'dark',
       usingComponents: {
@@ -234,6 +257,7 @@
       mynum: 20,
       userInfo: { nickName: '加载中...' },
       goodsList: [],
+      goodsList2: [],
       banner: [
         {image_url:'https://desk-fd.zol-img.com.cn/t_s960x600c5/g5/M00/0D/09/ChMkJ1wnTKyIDXWIAAe1idP6iVIAAuETwAEVHkAB7Wh541.jpg'},
         {image_url:'https://desk-fd.zol-img.com.cn/t_s960x600c5/g5/M00/0D/09/ChMkJ1wnTKyIDXWIAAe1idP6iVIAAuETwAEVHkAB7Wh541.jpg'},
@@ -278,18 +302,19 @@
     computed = {}
     onLoad() {
       if(!this.loadOnNoData&&wx.getStorageSync('openid')){
-        // this.getTagItemList()
+        this.getTagItemList()
         // this.get_index_Data()
+        this.groupShowList()
       }
     }
     onShow(){
       if(wx.getStorageSync('currentVipInfo')){this.currentVipInfo = wx.getStorageSync('currentVipInfo');}
       if(wx.getStorageSync('openid')){
-        this.goodsList = []
-        this.currentPage = 1
-        this.getTagItemList()
+        // this.goodsList = []
+        // this.currentPage = 1
+        // this.getTagItemList()
         this.get_index_Data()
-        /*this.get_index_Data()*/ }
+      }
       this.checkAuthorize()
       // 初始化城市选择 与 id
       wx.setStorageSync('currentOid', '')
@@ -557,6 +582,12 @@
         // if(preloadData.data){
         //   this.$preload('preload', preloadData.data) //先
         // }
+      },
+      async go_to_goodDetail2(id){
+        wx.navigateTo({url: `./goodDetail2?sourcePage=${id}`})
+      },
+      seeMoreBtn(){
+        wx.navigateTo({url: `../page2/pages/groupGoodList`})
       }
     }
     //----------------------------------初始化组合------------------------------------
@@ -682,7 +713,8 @@
             method:'post'
           });
           if (rlt.data.data.token) {
-            wepy.setStorageSync('openid', rlt.data.data.token);//保存
+            wepy.setStorageSync('openid', rlt.data.data.token);//保存本地
+            wepy.setStorageSync('session_key', rlt.data.data.session_key);//保存本地
             wx.redirectTo({ url: "./showHome" });
             let result = await api.saveUserInfo({//保存用户信息
               query: Object.assign(e.detail.userInfo,{token:rlt.data.data.token}),
@@ -785,6 +817,25 @@
         console.log(err)
       }
     }
+
+    async groupShowList(){
+      const result = await api.groupShowList({
+        query:{
+          page:1, 
+          pageSize:4,
+          item_type:'group',
+          // id: 23,
+          // is_group: 1,
+          token: wx.getStorageSync('openid')
+        },
+        noloading:1,
+        method:"POST",
+      })
+      if(!result.data.code){
+        this.goodsList2 = result.data.data.list
+      }
+      
+    }
     /**
      * 页面分享
      */
@@ -814,6 +865,12 @@
 </script>
 <style lang="less" scoped>
 @import '../utils/style.less';
+  .cellimgbox{
+    image{
+      width: 100%;
+      height:330rpx;
+    }
+  }
   .myContainer{
     width: 100%;
     height: 100%;
@@ -1078,32 +1135,18 @@
   // 商品列表
   .shop_recommen_list{
     margin-top: 48rpx;
-    .nowShop_advanceSale{
-      height: 80rpx;
-      background: #fff;
-      display: flex;
-      margin-bottom: 20rpx;
-      .child{
-        width: 50%;
-        padding: 0 100rpx;
-        box-sizing: border-box;
-        .span{
-          height: 100%;
-          font-size: 30rpx;
-          color: #666;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-sizing: border-box;
-        }
-        .span.active{
-          color:#e64340;
-          border-bottom: 2px solid #e64340;
-        }
-      }
-    }
     .shop_list{
       padding: 0 20rpx;
+      .seeMoreBtn{
+        width: 180rpx;
+        height: 60rpx;
+        line-height: 60rpx;
+        border-radius: 12rpx;
+        text-align: center;
+        color: #fff;
+        background: #323232;
+        margin: 24rpx auto;
+      }
       .list_box{
         padding: 18rpx;
         display: flex;
@@ -1162,6 +1205,19 @@
           .cartImg{
             width:58rpx;
             height:58rpx;
+            position: absolute;
+            bottom: 12rpx;
+            right: 24rpx;
+          }
+          .shopButtom{
+            width: 140rpx;;
+            height: 42rpx;
+            background: #FF6356;
+            font-size: 24rpx;
+            border-radius: 12rpx;
+            color: #fff;
+            text-align: center;
+            line-height: 42rpx;
             position: absolute;
             bottom: 12rpx;
             right: 24rpx;

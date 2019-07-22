@@ -74,6 +74,19 @@ page{
 .goodDetail .van-info{
   font-size:10px;
 }
+.pintuan .van-button{
+  font-size: 13px !important;
+}
+.pintuan .i-count-down text{
+  position: relative;
+  top: -26rpx;
+  color: #fe4f63;
+}
+.orderDetail .i-count-down text{
+  position: relative;
+  top: -26rpx;
+  color: #fe4f63;
+}
 </style>
 
 <script>
@@ -91,7 +104,6 @@ export default class extends wepy.app {
     pages: [
       'pages/index',
       'pages/authorize',
-      
       "pages/category",
       "pages/shopCart",
       "pages/center",
@@ -105,11 +117,9 @@ export default class extends wepy.app {
       "pages/group",
       "pages/orderDetail",
       "pages/couponChoose",
-      "pages/recruit",
-      "pages/supplier",
-      "pages/applyTuan",
       "pages/balance",
-      "pages/orderConfirm"
+      "pages/orderConfirm",
+      "pages/goodDetail2"
     ],
     "subPackages": [
       {
@@ -134,11 +144,18 @@ export default class extends wepy.app {
           "pages/about",
           "pages/exchange",
           "pages/coupon",
+          "pages/addressMassege",
+          "pages/addressDetail",
+          "pages/recruit",
+          "pages/applyTuan",
+          "pages/supplier",
+          "pages/assemble",
+          "pages/groupGoodList"
         ]
       }
     ],
     preloadRule: {
-      "pages/center": {
+      "pages/index": {
         "network": "all",
         "packages": ["page2"]
       }

@@ -1,14 +1,38 @@
 <template>
   <view class="orderDetail">
+
     <view class="send_out_info">
+      <!-- 选择自提点配送 -->
       <view class="input_boxx">
-        <text style="font-size:30rpx;color:#333;">收货人：</text>
-        <input value="{{dataInfo.userInfo.nickname}}" class="input1" maxlength="10" placeholder="微信昵称" />
-        <input type="number" value="{{myMobile}}" bindinput="bindChange" maxlength="11" placeholder="手机号码" />
+        <image wx:if="{{selfTakeYes}}" class="" src="../assets/images/ad_default2@3x.png" style="width:32rpx;height:32rpx;padding:20rpx 20rpx 20rpx 0;"/>
+        <image wx:else @tap="myselfTakeT()" src="../assets/images/ad_default@3x.png" style="width:32rpx;height:32rpx;padding:20rpx 20rpx 20rpx 0;"/>
+        <view class="flexBox">
+          <view class="send_address">提货地点：{{dataInfo.teamInfo.address}}</view>
+          <view class="send_name" style="margin-top:12rpx;">团长信息：{{dataInfo.teamInfo.realname}}</view>
+        </view>
       </view>
-      <view class="send_address">提货地点：{{dataInfo.teamInfo.address}}</view>
-      <view class="send_name">团长信息：{{dataInfo.teamInfo.realname}}</view>
+      <!-- 选择地址配送 -->
+      <view class="input_boxx" style="border-top:4rpx dashed #eee;">
+        <image wx:if="{{!selfTakeYes}}" class="" src="../assets/images/ad_default2@3x.png" style="width:32rpx;height:32rpx;padding:20rpx 20rpx 20rpx 0;"/>
+        <image wx:else class="" @tap="myselfTakeT()" src="../assets/images/ad_default@3x.png" style="width:32rpx;height:32rpx;padding:20rpx 20rpx 20rpx 0;"/>
+        
+        <view class="defaultAddressImg" @tap="go_to_addressMassege()" wx:if="{{!dataInfo.user_address}}">
+          <image class="" src="../assets/images/add.png" style="width:64rpx;height:64rpx;"/>
+        </view>
+        <view wx:else class="flexBox" @tap="go_to_addressMassege()">
+          <view class="topView">
+            <span style="font-size:30rpx;color:#333;margin-right:20rpx;">{{dataInfo.user_address.user_name}}</span>
+            <span style="color:#666;">{{dataInfo.user_address.tel_number}}</span>
+          </view>
+          <view class="addressDetail">{{dataInfo.user_address.province_str}}{{dataInfo.user_address.city_str}}{{dataInfo.user_address.area_str}}{{detail_info}}</view>
+        </view>
+
+        <image class="" src="../assets/images/right.png" style="width:17rpx;height:28rpx;"/>
+        <!-- <input value="{{dataInfo.userInfo.nickname}}" class="input1" maxlength="10" placeholder="微信昵称" />
+        <input type="number" value="{{myMobile}}" bindinput="bindChange" maxlength="11" placeholder="手机号码" /> -->
+      </view>
     </view>
+
     <view style="width:100%;height:8rpx;font-size:0;">  
       <image class="" src="../assets/images/aa.png" style="width:100%;height:100%;"/>
     </view>
@@ -31,7 +55,7 @@
       <view class="commonStyle goods_activity_boxx">
         <!-- <view class="modular"><view class="now_time aaa">商品活动</view><view>-￥0.00</view></view>
         <view class="modular"><view class="now_time aaa">社区活动</view><view>-￥0.00</view></view> -->
-        <view class="modular" @tap="go_to_coupon">
+        <view class="modular" @tap="go_to_coupon" wx:if="{{!is_group}}">
           <view class="now_time aaa">优惠券优惠</view>
           <view wx:if="{{dataInfo.couponInfo.use_coupon==null}}">-￥{{dataInfo.couponInfo.use_coupon.coupon_money}}</view>
           <view wx:else>
@@ -49,12 +73,37 @@
           <switch disabled="true" checked="{{checked}}" bindchange="switch1Change" color="#fbc004" />
         </view> -->
 
-        <view class="modular">
-          <view class="now_time aaa">余额支付</view>
-          <switch checked="{{checked2}}" bindchange="switch2Change" color="#fbc004"/>
+        <view class="modular" @tap="switch2Change(1)">
+          <view class="now_time aaa">微信支付</view>
+          <image wx:if="{{!checked2}}" class="" src="../assets/gou.png" style="width:32rpx;height:32rpx;"/>
         </view>
+        <view class="modular" @tap="switch2Change(2)">
+          <view class="now_time aaa">余额支付</view>
+          <!-- <switch checked="{{checked2}}" bindchange="switch2Change" color="#fbc004"/> -->
+          <image wx:if="{{checked2}}" class="" src="../assets/gou.png" style="width:32rpx;height:32rpx;"/>
+        </view>
+
       </view>
     </view>
+
+    <!--TODO 拼团弹窗-->
+    <view class="goods-buy-panel-cover" catchtouchmove="myCatchTouch" @tap="close2"  wx:if="{{display_tuan}}"></view>
+    <view class="tanchaung" style="width:500rpx;display:{{ display_tuan ? 'block' : 'none' }};">
+      <view class="cont" style="display:block;">
+        <image class="delete_img" @tap="close2" mode="aspectFill" src="../assets/images/del.png"/>
+        <view class="tuan_title" style="font-size:32rpx;color:#333;text-align:center;">
+          温馨提示
+        </view>
+        <!-- 拼团商品信息wx:for="{{tuanList}}" wx:key="index" -->
+        <view class="tuan_cell_list">
+          <view class="niticeText">为了方便联系您，需要获取您的微信手机号</view>
+          <!-- <view class="shopButtom" @tap="onClickButton('group')">获取微信手机号</view> -->
+          <button open-type="getPhoneNumber" type="primary" lang="zh_CN" bindgetphonenumber="getPhoneNumber">获取微信手机号</button>
+        </view>
+      </view>
+      
+    </view>
+
     <view class="btn_pay_box">
       <view class="left_">
         <view class="actual_payment">合计：<text>￥{{dataInfo.couponPrice}}</text></view>
@@ -73,6 +122,7 @@ export default class orderDetail extends wepy.page {
     navigationBarTitleText: '订单确认'
   }
   data = {
+    display_tuan:false,//获取微信手机弹窗
     dataInfo:{},
     options:'',
     payType: 1,
@@ -82,7 +132,10 @@ export default class orderDetail extends wepy.page {
     showTime: "",
     coupon_id: "",
     quantity: 1,
-    myMobile:''
+    myMobile:'',
+    is_group:'',//团购商品标志
+    selfTakeYes:true,//是否自提点的标志
+    group_id:'',//跟团id标志
   }
   onShow(){
     console.log(wx.getStorageSync('currentCouponId'))
@@ -92,10 +145,13 @@ export default class orderDetail extends wepy.page {
     }
   }
   onLoad(options){
+    //从商品详情传过来的值
     console.log(options)
     this.options = options.id
     this.sku_id = options.sku_id
     this.quantity = options.quantity
+    this.is_group = options.is_group //拼团标
+    this.group_id = options.group_id //拼团id
 
     this.bug_now_request()
     //时间
@@ -105,19 +161,56 @@ export default class orderDetail extends wepy.page {
     this.$apply();
   }
   methods = {
+    async getPhoneNumber (e) {
+      console.log(e.detail.errMsg)
+      this.display_tuan = false
+      //进行保存手机号操作
+      if (e.detail.errMsg !== "getPhoneNumber:ok"){
+        return;
+      }
+      let result = await api.setMobile({
+        query:{ 
+          token: wx.getStorageSync('openid'), 
+          sessionKey: wx.getStorageSync('session_key'),
+          encryptedData: e.detail.encryptedData,
+          iv: e.detail.iv
+        },
+        method:"POST"
+      });
+      if(result.data.code==200){ 
+        tip.toast(result.data.msg)
+        this.bug_now_request()//重新请求 
+      }
+    },
+    myselfTakeT(){
+      if(this.selfTakeYes){//选择了地址
+        if(this.dataInfo.user_address){
+          this.selfTakeYes =false
+        }else{
+          tip.toast('请前往添加地址')
+        }
+      }else{//选择了自提点
+        this.selfTakeYes =true
+      }
+    },
     bindChange(event){
       this.myMobile = event.detail.value
+    },
+    go_to_addressMassege(){
+      this.$navigate(`../page2/pages/addressMassege`);
     },
     switch1Change(e){
       this.checked = e.detail.value
       console.log(checked)
     },
     switch2Change(e){
-      this.checked2 = e.detail.value
-      if(e.detail.value){
-        this.payType = 0
-      }else{
+      // this.checked2 = e.detail.value
+      if(e==1){
+        this.checked2=false
         this.payType = 1
+      }else{
+        this.checked2=true
+        this.payType = 0
       }
     },
     go_to_coupon(){
@@ -129,11 +222,13 @@ export default class orderDetail extends wepy.page {
     let result = await api.getExpectedTradeDetail({
       query:{ 
         token: wx.getStorageSync('openid'), 
-        item_id: this.options, 
+        id: this.options, 
         coupon_id: this.coupon_id, 
         sku_id: this.sku_id,
-        quantity: this.quantity
+        quantity: this.quantity,
+        is_group:this.is_group?'1':''
       },
+      method:"POST"
     });
     if(!result.data.code){
       console.log(result.data.data)
@@ -148,35 +243,48 @@ export default class orderDetail extends wepy.page {
         wx.setStorageSync('currentCouponId', result.data.data.couponInfo.use_coupon.id)
       }
       this.dataInfo = result.data.data
+      //判断是否绑定手机微信
+      if(this.dataInfo.userInfo.mobile==null){
+        // tip.toast('获取微信手机号')
+        this.display_tuan = true
+      }
       this.goodNumber = num
     }
     this.$apply();
   }
+
   onUnload() {
     wx.setStorageSync('currentCouponId', '')
   }
 
   async go_to_settlement(){
     var RegExp = /^((0\d{2,3}-\d{7,8})|(1[3584]\d{9}))$/;
-    if(!this.myMobile){
-      tip.toast('请填写手机号码，方便联系您')
-      return
-    }else if(!RegExp.test(this.myMobile)){
-      tip.toast('请正确填写号码')
+    if(this.dataInfo.userInfo.mobile==null){
+      // tip.toast('获取微信手机号')
+      this.display_tuan = true
       return
     }
-    let result = await api.doOrder({
+    // else if(!RegExp.test(this.myMobile)){
+    //   tip.toast('请正确填写号码')
+    //   return
+    // }
+    let result = await api.tuanOrderConfirm({
       query:{ 
         token:wx.getStorageSync('openid'), 
-        item_id:this.options, 
-        coupon_id: this.coupon_id, 
-        sku_id: this.sku_id,
-        quantity: this.dataInfo.list[0].quantity,
-        pay_type: this.payType,
-        buyer_remarks:'空',
-        nickname:this.dataInfo.userInfo.nickname,
-        mobile: this.myMobile,
-        use_point: this.checked ? this.dataInfo.userPoint.use_point_amount : ''
+        id:this.options, //有
+        coupon_id: this.coupon_id, //拼团为空
+        sku_id: this.sku_id,//有
+        quantity: this.dataInfo.list[0].quantity,//有
+        pay_type: this.payType,//有
+        buyer_remarks:'空', //后面再添加该功能
+        nickname:this.dataInfo.userInfo.nickname,//获取微信昵称
+        mobile: this.dataInfo.userInfo.mobile,//微信授权获取  this.myMobile
+        use_point: this.checked ? this.dataInfo.userPoint.use_point_amount :'',
+        is_group: this.is_group?this.is_group:'',//详情传过来的标志
+        delivery_type:this.selfTakeYes?'self_lifting':'express',//用户选择
+        address_id:this.selfTakeYes?'':this.dataInfo.user_address.user_id,
+        group_type:this.group_id?'group_follow':'group_found',
+        promotion_group_found_id:this.group_id?this.group_id:''
       },
       method:'POST'
     });
@@ -187,6 +295,9 @@ export default class orderDetail extends wepy.page {
     }else{
       tip.toast(result.data.msg)
     }
+  }
+  close2 () {
+    this.display_tuan = false;
   }
 
   async toPay(tid){
@@ -231,6 +342,9 @@ export default class orderDetail extends wepy.page {
           },
           fail (res) {
             wx.showLoading({ title: '已取消支付' })
+            if(this.group_id){
+              return
+            }
             setTimeout(function () {
               wx.hideLoading()
               wx.navigateTo({
@@ -248,31 +362,37 @@ export default class orderDetail extends wepy.page {
 }
 </script>
 <style lang="less" scoped>
+@import '../utils/style.less';
 switch{
   zoom: .5;
 }
 .orderDetail{
   background: #F6F6F6;
   .send_out_info{
-    padding: 20rpx;
+    padding: 0rpx 40rpx;
     background: #fff;
     .input_boxx{
       display: flex;
       align-items: center;
-      padding-bottom: 20rpx;
-      input{
-        border: 1rpx solid #ccc;
-        padding-left: 8rpx;
-        padding-right: 8rpx;
+      .flexBox{
+        flex: 1;
+        padding: 28rpx 40rpx;
+        .addressDetail{
+          margin-top: 20rpx;
+          color: #333;
+        }
       }
-      .input1{
-        width: 158rpx;
-        margin-right: 20rpx;
+      .defaultAddressImg{
+        height: 140rpx;
+        padding-left: 20rpx;
+        flex: 1;
+        display: flex;
+        align-items: center;
       }
     }
     .send_address,.send_name{
-      font-size: 26rpx;
-      color: #666;
+      font-size: 28rpx;
+      color: #333;
     }
   }
   .good_cont{
@@ -338,6 +458,58 @@ switch{
       color: #fff;
       font-size: 30rpx;
     }
+  }
+  .tanchaung.showTanChuang{
+    display: none;
+  }
+  .tanchaung{
+    border-radius:19rpx;
+    height:240rpx;
+    background: #FFF;
+    padding:30rpx;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    overflow: hidden;
+    background-color: #fff;
+    -webkit-transition-property: -webkit-transform,opacity;
+    transition-property: transform,opacity;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    .cont{
+      display: flex;
+      position: relative;
+      color: #333;
+      .delete_img{
+        width: 48rpx;
+        height: 48rpx;
+        position: absolute;
+        top: -4rpx;
+        right: 0;
+      }
+    }
+    .tuan_cell_list{
+      .niticeText{
+        color: #666;
+        padding:30rpx 40rpx;
+        text-align: center;
+      }
+      .shopButtom{
+        width: 300rpx;;
+        height: 68rpx;
+        background: #FF6356;
+        font-size: 28rpx;
+        border-radius: 14rpx;
+        color: #fff;
+        text-align: center;
+        line-height: 68rpx;
+        margin: 0 auto;
+      }
+      button{
+        font-size:30rpx;margin:0 24rpx;background:#e64340;border-radius: 18rpx;
+      }
+    }
+    
   }
 }
 </style>

@@ -1,0 +1,163 @@
+<template>
+  <view class="myContainer">
+    <view class="headerView">
+      <view class="text1">供应商</view>
+      <view class="text2">招募啦！</view>
+    </view>
+    <view class="notice1">
+      拼家乐以品质为核心，以具有竞争力的价格和优质的服务打造中国领先的互联网+社区电商平台。现已覆盖全国上万个社区，几百万个家庭 ，用户人数超过5百万人。
+    </view>
+    <view class="backColorBox">
+      <view class="fixedBox"><view class="span">全国统一招商电话</view><view class="view" @tap="makePhoneCall()">18676374833</view></view>
+    </view>
+    <view class="commonMadule">
+      <view class="tuanzhangQuanyi">
+        <view class="title">团长权益</view>
+        <view class="imgAndTextBox">
+          <view class="imgAndText">
+            <image style="width:124rpx;height:124rpx;" src="../assets/111.png"/>
+            <view class="tel">客户广</view>
+            <view class="conttt">全国拥有大量稳定优质用户</view>
+          </view>
+          <view class="imgAndText">
+            <image style="width:124rpx;height:124rpx;" src="../assets/111.png"/>
+            <view class="tel">零费用</view>
+            <view class="conttt">无需缴纳加盟费、上架费</view>
+          </view>
+          <view class="imgAndText">
+            <image style="width:124rpx;height:124rpx;" src="../assets/111.png"/>
+            <view class="tel">回款快</view>
+            <view class="conttt">结款周期短回款快</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="commonMadule">
+      <view class="tuanzhangQuanyi">
+        <view class="title">合作条件</view>
+        <view class="imgAndTextBox">
+          <view class="imgAndText">
+            <image style="width:124rpx;height:124rpx;" src="../assets/111.png"/>
+            <view class="tel class2">大量稳定优质资源</view>
+          </view>
+          <view class="imgAndText">
+            <image style="width:124rpx;height:124rpx;" src="../assets/111.png"/>
+            <view class="tel class2">实惠的价格</view>
+          </view>
+          <view class="imgAndText">
+            <image style="width:124rpx;height:124rpx;" src="../assets/111.png"/>
+            <view class="tel class2">厂家直供或一级代理商</view>
+          </view>
+        </view>
+      </view>
+    </view>
+      
+  </view>
+</template>
+<script>
+import wepy from 'wepy'
+import tip from '@/utils/tip'
+export default class supplier extends wepy.page {
+  config = {
+      navigationBarTitleText: '供应商招募'
+    }
+    data = {
+      hello: 'hello world'
+    }
+    onLoad(){}
+    methods = {
+      makePhoneCall(){
+        wx.makePhoneCall({
+          phoneNumber: '18878554085' //仅为示例，并非真实的电话号码
+        })
+      }
+    }
+}
+</script>
+<style lang="less">
+.myContainer{
+  background: #FFEB68;
+  padding-bottom: 40rpx;
+  .notice1{
+    color: #46517C;
+    font-size: 26rpx;
+    padding: 14rpx 42rpx;
+    text-align: justify;
+    font-weight: 700;
+  }
+  .backColorBox{
+    background: #FBD63C;
+    height: 24rpx;
+    width: 500rpx;
+    border-radius: 32rpx;
+    margin: 30rpx auto 28rpx auto;
+    position: relative;
+    .fixedBox{
+      display: flex;
+      align-items:center;
+      position: absolute;
+      top: -18rpx;
+      font-size: 24rpx;
+      color: #46517C;
+      font-weight: 700;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0 28rpx;
+      .span{flex: 1;font-weight: bold;}
+      .view{ font-size: 30rpx; }
+    }
+  }
+  .headerView{
+    padding-left: 100rpx;
+    padding-top: 38rpx;
+    height: 240rpx;
+    .text1,.text2 {
+      color: #46517C;
+      font-size: 88rpx;
+      font-weight: 700;
+    }
+  }
+  .commonMadule{
+    padding: 16rpx 42rpx;
+  }
+  .tuanzhangQuanyi{
+    background-color: #fff;
+    border-radius: 14rpx;
+    .title{
+      font-size: 34rpx;
+      color: #46517C;
+      font-weight: 700;
+      line-height: 100rpx;
+      text-align: center;
+    }
+    .imgAndTextBox{
+      display: flex;
+      flex-wrap:wrap;
+      padding: 20rpx;
+      text-align: center;
+      .imgAndText{
+        width: 33.33%;
+        // display: flex;
+        // align-items:center;
+        // justify-content:center;
+        .tel{
+          padding:10rpx 24rpx;
+          padding-top: 28rpx;
+          color: #46517C;
+          font-size: 30rpx;
+          font-weight: 600;
+        }
+        .tel.class2{
+          margin-top: 20rpx;
+        }
+        .conttt{
+          padding:10rpx 24rpx;
+          color: #999;
+          font-size: 24rpx;
+        }
+      }
+    }
+  }
+}
+</style>
