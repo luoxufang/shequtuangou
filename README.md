@@ -34,5 +34,5 @@
 ### 部分功能截图
 
 
-<img src="http://www.kaipushuo.com/images/lalala.png" width="365" height="619" /> 	<img src="http://www.kaipushuo.com/images/lalala3.png" width="365" height="619"/> 
+<img src="http://www.kaipushuo.com/images/lalala.png" width="365" height="619" /> 	<img src="http://www.kaipushuo.com/images/lalala2.png" width="365" height="619"/> <img src="http://www.kaipushuo.com/images/lalala3.png" width="365" height="619"/>
 
